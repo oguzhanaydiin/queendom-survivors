@@ -1,0 +1,102 @@
+[gd_scene format=3 uid="uid://c5eody6xp8laa"]
+
+[ext_resource type="Script" uid="uid://bdgv5c273j8lt" path="res://scenes/world/world.gd" id="1"]
+[ext_resource type="Script" uid="uid://c063e5yoylum8" path="res://scenes/player/player.gd" id="2"]
+[ext_resource type="PackedScene" uid="uid://cqymvyl8wt6vy" path="res://scenes/orc/orc.tscn" id="4"]
+[ext_resource type="Texture2D" uid="uid://dn6atd5ma7hnj" path="res://assets/sprites/Pawn_Idle.png" id="4_aqk2v"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_036b0"]
+atlas = ExtResource("4_aqk2v")
+region = Rect2(0, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_dwbse"]
+atlas = ExtResource("4_aqk2v")
+region = Rect2(192, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_pkg7o"]
+atlas = ExtResource("4_aqk2v")
+region = Rect2(384, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_gbfbk"]
+atlas = ExtResource("4_aqk2v")
+region = Rect2(576, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ioo17"]
+atlas = ExtResource("4_aqk2v")
+region = Rect2(768, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_wse8f"]
+atlas = ExtResource("4_aqk2v")
+region = Rect2(960, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ic0uy"]
+atlas = ExtResource("4_aqk2v")
+region = Rect2(1152, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_k3n1d"]
+atlas = ExtResource("4_aqk2v")
+region = Rect2(1344, 0, 192, 192)
+
+[sub_resource type="SpriteFrames" id="SF_1"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_036b0")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_dwbse")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_pkg7o")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_gbfbk")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ioo17")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_wse8f")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ic0uy")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_k3n1d")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 1.0
+}, {
+"frames": [],
+"loop": false,
+"name": &"shoot",
+"speed": 4.0
+}, {
+"frames": [],
+"loop": true,
+"name": &"walk",
+"speed": 8.0
+}]
+
+[node name="World" type="Node2D" unique_id=1543137810]
+script = ExtResource("1")
+enemy_scene = ExtResource("4")
+
+[node name="Player" type="CharacterBody2D" parent="." unique_id=1455280721]
+position = Vector2(320, 180)
+scale = Vector2(14, 14)
+collision_mask = 0
+script = ExtResource("2")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="Player" unique_id=265118827]
+texture_filter = 1
+scale = Vector2(0.09, 0.09)
+sprite_frames = SubResource("SF_1")
+animation = &"idle"
+autoplay = "idle"
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Player" unique_id=1304439180]
+polygon = PackedVector2Array(-0.20000076, -2.7999992, 1.7999992, -1.7999992, 2.2000008, 0.40000153, 2.2000008, 2, 0.9999962, 2.800003, -0.79999924, 3, -2.2000008, 2, -2.4000015, 0, -2.4000015, -2.5999985)
+
+[connection signal="animation_finished" from="Player/AnimatedSprite2D" to="Player" method="_on_animated_sprite_2d_animation_finished"]
