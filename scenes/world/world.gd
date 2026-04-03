@@ -4,11 +4,34 @@ extends Node2D
 @export var spawn_interval = 2.0
 
 var spawn_timer = 0.0
+var _hud: CanvasLayer
+var _game_over: bool = false
 
 func _ready():
 	spawn_timer = spawn_interval
+	_setup_hud()
+
+func _setup_hud() -> void:
+	var hud_script = preload("res://scenes/hud/hud.gd")
+	_hud = CanvasLayer.new()
+	_hud.set_script(hud_script)
+	_hud.name = "HUD"
+	add_child(_hud)
+
+	var player = get_node("Player")
+	player.stats_changed.connect(_hud.update_stats)
+	player.player_died.connect(_on_player_died)
+	player.damage_taken.connect(_hud.flash_damage)
+	_hud.update_stats(player.current_hp, player.max_hp, player.current_xp, player.xp_to_next_level, player.level)
+
+func _on_player_died() -> void:
+	_game_over = true
+	_hud.show_game_over()
+	get_tree().paused = true
 
 func _process(delta):
+	if _game_over:
+		return
 	spawn_timer -= delta
 	if spawn_timer <= 0:
 		spawn_timer = spawn_interval
