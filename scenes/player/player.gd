@@ -21,6 +21,7 @@ var _dead: bool = false
 @onready var animated_sprite = $AnimatedSprite2D
 
 func _ready():
+	add_to_group("player")
 	shoot_timer = shoot_interval
 	current_hp = max_hp
 	collision_layer = 1
