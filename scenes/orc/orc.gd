@@ -24,7 +24,7 @@ func _physics_process(delta):
 	if dmg_timer > 0:
 		dmg_timer -= delta
 
-	var player = get_tree().current_scene.get_node_or_null("Player")
+	var player = get_tree().get_first_node_in_group("player")
 	if player:
 		var dir = (player.global_position - global_position).normalized()
 		velocity = dir * speed

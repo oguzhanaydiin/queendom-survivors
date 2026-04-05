@@ -50,6 +50,7 @@ func _ready():
 	_build_hp_strip(root)
 	_build_damage_flash(root)
 	_build_game_over(root)
+	_build_crosshair()
 
 func _process(delta: float) -> void:
 	if _game_over:
@@ -291,8 +292,13 @@ func show_game_over() -> void:
 	if _go_overlay:
 		_go_overlay.visible = true
 
-# Helpers
+func _build_crosshair() -> void:
+	var crosshair = Node2D.new()
+	crosshair.set_script(preload("res://scenes/hud/crosshair.gd"))
+	add_child(crosshair)
+
 func _on_restart_pressed() -> void:
+	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	get_tree().paused = false
 	get_tree().reload_current_scene()
 

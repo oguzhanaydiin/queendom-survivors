@@ -10,7 +10,7 @@ func _ready():
 	z_index = 1
 
 func _process(delta: float) -> void:
-	var player = get_tree().current_scene.get_node_or_null("Player")
+	var player = get_tree().get_first_node_in_group("player")
 	if not player:
 		return
 
