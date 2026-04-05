@@ -12,7 +12,23 @@ var _damage_flash: ColorRect
 var _elapsed_time: float = 0.0
 var _game_over: bool = false
 
-# layout constants
+# Weapon grid state
+var _w_cells: Array = []   # 6 weapon cells  (row 0)
+var _a_cells: Array = []   # 6 attr cells    (row 1)
+
+# Level-up modal
+var _levelup_overlay: Control = null
+var _levelup_callback: Callable
+
+# Icon sprite sheet
+const ICON_SHEET_PATH := "res://assets/sprites/weapon_icons.png"
+const ICON_COLS := 6
+const ICON_ROWS := 2
+var _icon_sheet: Texture2D = null
+var _icon_cell_w: float    = 0.0
+var _icon_cell_h: float    = 0.0
+
+# ── Layout constants ───────────────────────────────────────────────────────────
 const BORDER     = 3
 const STRIP_H    = 38
 const LVL_W      = 80
@@ -24,7 +40,34 @@ const TIMER_GAP  = 4
 const MODAL_W    = 480
 const MODAL_H    = 280
 
-# Palette
+# Weapon grid
+const CELL_W   = 62
+const CELL_H   = 54
+const CELL_GAP = 2
+const ROW_GAP  = 3
+const GRID_PAD = 8
+
+const WEAPON_KEYS: Array = ["slime_ball", "fire_orb", "ice_shard", "thunder", "poison", "wind_blade"]
+const ATTR_KEYS:   Array = ["speed", "damage", "atk_spd", "area", "duration", "magnet"]
+
+const W_INFO: Array = [
+	{"icon": "◉",  "color": Color(0.25, 0.88, 0.35), "name": "SLIME BALL"},
+	{"icon": "◈",  "color": Color(0.95, 0.42, 0.08), "name": "FIRE ORB"},
+	{"icon": "❄",  "color": Color(0.42, 0.72, 1.00), "name": "ICE SHARD"},
+	{"icon": "⚡", "color": Color(0.92, 0.88, 0.12), "name": "THUNDER"},
+	{"icon": "☁",  "color": Color(0.52, 0.88, 0.22), "name": "POISON"},
+	{"icon": "≋",  "color": Color(0.72, 0.92, 0.98), "name": "WIND BLADE"},
+]
+const A_INFO: Array = [
+	{"icon": "▶▶", "color": Color(0.25, 0.88, 0.35), "name": "SPEED"},
+	{"icon": "⚔",  "color": Color(0.95, 0.42, 0.08), "name": "DAMAGE"},
+	{"icon": "↺",  "color": Color(0.42, 0.72, 1.00), "name": "ATK SPD"},
+	{"icon": "◎",  "color": Color(0.92, 0.88, 0.12), "name": "AREA"},
+	{"icon": "⏱",  "color": Color(0.52, 0.88, 0.22), "name": "DURATION"},
+	{"icon": "⊕",  "color": Color(0.72, 0.92, 0.98), "name": "MAGNET"},
+]
+
+# ── Palette ────────────────────────────────────────────────────────────────────
 const C_XP_BG    = Color(0.05, 0.04, 0.18)
 const C_XP_FILL  = Color(0.08, 0.72, 1.00)
 const C_XP_BDR   = Color(0.10, 0.25, 0.58)
@@ -37,6 +80,12 @@ const C_HEART_BG  = Color(0.24, 0.05, 0.05)
 const C_HP_BAR_BG = Color(0.14, 0.03, 0.03)
 const C_HP_FILL   = Color(0.96, 0.12, 0.10)
 
+const C_LOCKED_BG   = Color(0.06, 0.06, 0.09, 0.88)
+const C_LOCKED_BDR  = Color(0.11, 0.11, 0.16)
+const C_LOCKED_TEXT = Color(0.28, 0.28, 0.34)
+const C_CELL_BG     = Color(0.04, 0.05, 0.08, 0.92)
+
+# ── Init ───────────────────────────────────────────────────────────────────────
 func _ready():
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	var root = Control.new()
@@ -45,7 +94,9 @@ func _ready():
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(root)
 
+	_load_icon_sheet()
 	_build_xp_strip(root)
+	_build_weapon_grid(root)
 	_build_timer_label(root)
 	_build_hp_strip(root)
 	_build_damage_flash(root)
@@ -59,7 +110,7 @@ func _process(delta: float) -> void:
 	if _timer_label:
 		_timer_label.text = _fmt_time(_elapsed_time)
 
-# XP bar
+# ── XP bar ─────────────────────────────────────────────────────────────────────
 func _build_xp_strip(root: Control) -> void:
 	var strip = Panel.new()
 	strip.anchor_left   = 0.0
@@ -103,7 +154,7 @@ func _build_xp_strip(root: Control) -> void:
 	_apply_bar(_xp_bar, C_XP_BG, C_XP_FILL)
 	strip.add_child(_xp_bar)
 
-# Timer bar
+# ── Timer bar ──────────────────────────────────────────────────────────────────
 func _build_timer_label(root: Control) -> void:
 	var panel = Panel.new()
 	panel.anchor_left   = 0.0
@@ -135,7 +186,7 @@ func _build_timer_label(root: Control) -> void:
 	_timer_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	panel.add_child(_timer_label)
 
-# HP bar
+# ── HP bar ─────────────────────────────────────────────────────────────────────
 func _build_hp_strip(root: Control) -> void:
 	var strip = Panel.new()
 	strip.anchor_left   = 0.0
@@ -200,7 +251,7 @@ func _build_hp_strip(root: Control) -> void:
 	_hp_num_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	strip.add_child(_hp_num_label)
 
-# Screen flash on damage
+# ── Damage flash ───────────────────────────────────────────────────────────────
 func _build_damage_flash(root: Control) -> void:
 	_damage_flash = ColorRect.new()
 	_damage_flash.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -208,7 +259,7 @@ func _build_damage_flash(root: Control) -> void:
 	_damage_flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(_damage_flash)
 
-# Game over overlay
+# ── Game over overlay ──────────────────────────────────────────────────────────
 func _build_game_over(root: Control) -> void:
 	_go_overlay = Panel.new()
 	_go_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -265,7 +316,219 @@ func _build_game_over(root: Control) -> void:
 	btn.pressed.connect(_on_restart_pressed)
 	modal.add_child(btn)
 
-# stat functions
+# ── Weapon grid (2 rows × 6 cols) ─────────────────────────────────────────────
+func _build_weapon_grid(root: Control) -> void:
+	_w_cells.clear()
+	_a_cells.clear()
+	var start_y := float(STRIP_H) + float(GRID_PAD)
+
+	for i in range(6):
+		var cx := float(GRID_PAD) + i * (CELL_W + CELL_GAP)
+		_w_cells.append(_make_grid_cell(root, cx, start_y))
+		_a_cells.append(_make_grid_cell(root, cx, start_y + CELL_H + ROW_GAP))
+
+func _make_grid_cell(root: Control, x: float, y: float) -> Dictionary:
+	var panel := Panel.new()
+	panel.position = Vector2(x, y)
+	panel.size = Vector2(CELL_W, CELL_H)
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.add_theme_stylebox_override("panel", _pbox(C_LOCKED_BG, C_LOCKED_BDR, 1))
+	root.add_child(panel)
+
+	var icon_lbl := Label.new()
+	icon_lbl.anchor_left   = 0.0
+	icon_lbl.anchor_right  = 1.0
+	icon_lbl.anchor_top    = 0.0
+	icon_lbl.anchor_bottom = 1.0
+	icon_lbl.offset_top    = 4
+	icon_lbl.offset_bottom = -16
+	icon_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	icon_lbl.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
+	icon_lbl.add_theme_font_size_override("font_size", 20)
+	icon_lbl.add_theme_color_override("font_color", C_LOCKED_TEXT)
+	icon_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	icon_lbl.text = "?"
+	panel.add_child(icon_lbl)
+
+	var lv_lbl := Label.new()
+	lv_lbl.anchor_left   = 0.0
+	lv_lbl.anchor_right  = 1.0
+	lv_lbl.anchor_top    = 1.0
+	lv_lbl.anchor_bottom = 1.0
+	lv_lbl.offset_top    = -15
+	lv_lbl.offset_bottom = -2
+	lv_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lv_lbl.vertical_alignment   = VERTICAL_ALIGNMENT_TOP
+	lv_lbl.add_theme_font_size_override("font_size", 9)
+	lv_lbl.add_theme_color_override("font_color", C_LOCKED_TEXT)
+	lv_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	lv_lbl.text = "---"
+	panel.add_child(lv_lbl)
+
+	return {"panel": panel, "icon_lbl": icon_lbl, "lv_lbl": lv_lbl}
+
+func update_weapons(weapon_levels: Dictionary, attr_levels: Dictionary) -> void:
+	for i in range(6):
+		_refresh_cell(_w_cells[i], weapon_levels.get(WEAPON_KEYS[i], 0), W_INFO[i])
+		_refresh_cell(_a_cells[i], attr_levels.get(ATTR_KEYS[i],   0), A_INFO[i])
+
+func _refresh_cell(cell: Dictionary, lv: int, info: Dictionary) -> void:
+	if lv <= 0:
+		cell.panel.add_theme_stylebox_override("panel", _pbox(C_LOCKED_BG, C_LOCKED_BDR, 1))
+		cell.icon_lbl.text = "?"
+		cell.icon_lbl.add_theme_color_override("font_color", C_LOCKED_TEXT)
+		cell.lv_lbl.text   = "---"
+		cell.lv_lbl.add_theme_color_override("font_color", C_LOCKED_TEXT)
+	else:
+		var c: Color = info["color"]
+		var bg_c  := Color(c.r * 0.12, c.g * 0.12, c.b * 0.12, 0.94)
+		var bdr_c := Color(c.r * 0.50, c.g * 0.50, c.b * 0.50)
+		cell.panel.add_theme_stylebox_override("panel", _pbox(bg_c, bdr_c, 1))
+		cell.icon_lbl.text = info["icon"]
+		cell.icon_lbl.add_theme_color_override("font_color", c)
+		cell.lv_lbl.text   = "Lv %d" % lv
+		cell.lv_lbl.add_theme_color_override("font_color", Color(c.r * 0.85, c.g * 0.85, c.b * 0.85))
+
+# ── Level-up choice modal ──────────────────────────────────────────────────────
+func show_level_up_choice(options: Array, on_chosen: Callable) -> void:
+	_levelup_callback = on_chosen
+	get_tree().paused = true
+	_build_levelup_modal(options)
+
+func _build_levelup_modal(options: Array) -> void:
+	if _levelup_overlay:
+		_levelup_overlay.queue_free()
+
+	var root: Control = get_child(0)
+
+	_levelup_overlay = Control.new()
+	_levelup_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_levelup_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	root.add_child(_levelup_overlay)
+
+	# Dark backdrop
+	var backdrop := ColorRect.new()
+	backdrop.set_anchors_preset(Control.PRESET_FULL_RECT)
+	backdrop.color = Color(0.0, 0.0, 0.0, 0.72)
+	backdrop.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_levelup_overlay.add_child(backdrop)
+
+	# Title
+	var title := Label.new()
+	title.text = "LEVEL  UP!"
+	title.set_anchors_preset(Control.PRESET_FULL_RECT)
+	title.offset_top = 72
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.vertical_alignment   = VERTICAL_ALIGNMENT_TOP
+	title.add_theme_font_size_override("font_size", 38)
+	title.add_theme_color_override("font_color", Color(1.0, 0.92, 0.28))
+	title.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 1.0))
+	title.add_theme_constant_override("outline_size", 4)
+	title.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_levelup_overlay.add_child(title)
+
+	# Sub-title hint
+	var hint := Label.new()
+	hint.text = "Choose an upgrade"
+	hint.set_anchors_preset(Control.PRESET_FULL_RECT)
+	hint.offset_top = 122
+	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	hint.vertical_alignment   = VERTICAL_ALIGNMENT_TOP
+	hint.add_theme_font_size_override("font_size", 13)
+	hint.add_theme_color_override("font_color", Color(0.72, 0.72, 0.80))
+	hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_levelup_overlay.add_child(hint)
+
+	# Cards
+	const CARD_W   := 148.0
+	const CARD_H   := 196.0
+	const CARD_GAP := 18.0
+	var n := options.size()
+	if n == 0:
+		return
+	var vp    := get_viewport().get_visible_rect().size
+	var total := n * CARD_W + (n - 1) * CARD_GAP
+	var sx    := (vp.x - total) * 0.5
+	var sy    := (vp.y - CARD_H) * 0.5 + 16.0
+
+	for i in range(n):
+		_build_card(_levelup_overlay, options[i], sx + i * (CARD_W + CARD_GAP), sy, CARD_W, CARD_H)
+
+func _build_card(parent: Control, opt: Dictionary, x: float, y: float, w: float, h: float) -> void:
+	var c: Color   = opt.get("color", Color.WHITE)
+	var bg_c       := Color(c.r * 0.10, c.g * 0.10, c.b * 0.10, 0.96)
+	var bdr_c      := Color(c.r * 0.55, c.g * 0.55, c.b * 0.55)
+	var hover_bg_c := Color(c.r * 0.22, c.g * 0.22, c.b * 0.22, 0.98)
+
+	var card := Button.new()
+	card.position = Vector2(x, y)
+	card.size     = Vector2(w, h)
+	card.add_theme_stylebox_override("normal",  _pbox(bg_c, bdr_c))
+	card.add_theme_stylebox_override("hover",   _pbox(hover_bg_c, c))
+	card.add_theme_stylebox_override("pressed", _pbox(hover_bg_c, c))
+	card.add_theme_stylebox_override("focus",   _pbox(bg_c, bdr_c))
+	var up_id: String = opt.get("id", "")
+	card.pressed.connect(func(): _on_upgrade_chosen(up_id))
+	parent.add_child(card)
+
+	# Icon
+	var icon_lbl := Label.new()
+	icon_lbl.text = opt.get("icon", "?")
+	icon_lbl.position = Vector2(0, 18)
+	icon_lbl.size     = Vector2(w, 48)
+	icon_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	icon_lbl.add_theme_font_size_override("font_size", 30)
+	icon_lbl.add_theme_color_override("font_color", c)
+	icon_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	card.add_child(icon_lbl)
+
+	# Weapon/attr name
+	var name_lbl := Label.new()
+	name_lbl.text = opt.get("name", "???")
+	name_lbl.position = Vector2(0, 74)
+	name_lbl.size     = Vector2(w, 22)
+	name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	name_lbl.add_theme_font_size_override("font_size", 12)
+	name_lbl.add_theme_color_override("font_color", c)
+	name_lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
+	name_lbl.add_theme_constant_override("outline_size", 2)
+	name_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	card.add_child(name_lbl)
+
+	# Level arrow  "Lv 1  →  2"
+	var cur: int = opt.get("current_lv", 1)
+	var lv_lbl := Label.new()
+	lv_lbl.text = "Lv %d  →  %d" % [cur, cur + 1]
+	lv_lbl.position = Vector2(0, 104)
+	lv_lbl.size     = Vector2(w, 22)
+	lv_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lv_lbl.add_theme_font_size_override("font_size", 13)
+	lv_lbl.add_theme_color_override("font_color", Color(1.0, 0.95, 0.55))
+	lv_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	card.add_child(lv_lbl)
+
+	# Description
+	var desc_lbl := Label.new()
+	desc_lbl.text = opt.get("desc", "")
+	desc_lbl.position = Vector2(8, 136)
+	desc_lbl.size     = Vector2(w - 16, 48)
+	desc_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	desc_lbl.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
+	desc_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	desc_lbl.add_theme_font_size_override("font_size", 10)
+	desc_lbl.add_theme_color_override("font_color", Color(0.80, 0.80, 0.84))
+	desc_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	card.add_child(desc_lbl)
+
+func _on_upgrade_chosen(upgrade_id: String) -> void:
+	if _levelup_overlay:
+		_levelup_overlay.queue_free()
+		_levelup_overlay = null
+	get_tree().paused = false
+	if _levelup_callback.is_valid():
+		_levelup_callback.call(upgrade_id)
+
+# ── Stat updaters ──────────────────────────────────────────────────────────────
 func update_stats(p_hp: int, p_max_hp: int, p_xp: int, p_xp_next: int, p_level: int) -> void:
 	if _hp_bar:
 		_hp_bar.max_value = p_max_hp
@@ -292,29 +555,32 @@ func show_game_over() -> void:
 	if _go_overlay:
 		_go_overlay.visible = true
 
+# ── Crosshair ──────────────────────────────────────────────────────────────────
 func _build_crosshair() -> void:
 	var crosshair = Node2D.new()
 	crosshair.set_script(preload("res://scenes/hud/crosshair.gd"))
 	add_child(crosshair)
 
+# ── Restart ────────────────────────────────────────────────────────────────────
 func _on_restart_pressed() -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	get_tree().paused = false
 	get_tree().reload_current_scene()
 
+# ── Helpers ────────────────────────────────────────────────────────────────────
 func _fmt_time(secs: float) -> String:
 	var m: int = int(secs) / 60
 	var s: int = int(secs) % 60
 	return "%d:%02d" % [m, s]
 
-func _pbox(bg: Color, border: Color) -> StyleBoxFlat:
+func _pbox(bg: Color, border: Color, bw: int = BORDER) -> StyleBoxFlat:
 	var s = StyleBoxFlat.new()
 	s.bg_color = bg
 	s.border_color = border
-	s.border_width_left   = BORDER
-	s.border_width_right  = BORDER
-	s.border_width_top    = BORDER
-	s.border_width_bottom = BORDER
+	s.border_width_left   = bw
+	s.border_width_right  = bw
+	s.border_width_top    = bw
+	s.border_width_bottom = bw
 	return s
 
 func _apply_bar(bar: ProgressBar, bg: Color, fill: Color) -> void:

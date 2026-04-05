@@ -70,11 +70,14 @@ func _setup_hud() -> void:
 	_player.stats_changed.connect(_hud.update_stats)
 	_player.player_died.connect(_on_player_died)
 	_player.damage_taken.connect(_hud.flash_damage)
+	_player.weapons_changed.connect(_hud.update_weapons)
+	_player.level_up_available.connect(_on_level_up_available)
 	_hud.update_stats(
 		_player.current_hp, _player.max_hp,
 		_player.current_xp, _player.xp_to_next_level,
 		_player.level
 	)
+	_hud.update_weapons(_player.weapon_levels, _player.attr_levels)
 
 
 # ---------------------------------------------------------------------------
@@ -85,6 +88,9 @@ func _on_player_died() -> void:
 	_game_over = true
 	_hud.show_game_over()
 	get_tree().paused = true
+
+func _on_level_up_available(options: Array) -> void:
+	_hud.show_level_up_choice(options, func(id: String): _player.apply_upgrade(id))
 
 
 func _process(delta: float) -> void:
