@@ -131,6 +131,24 @@ func _make_tile_image(tile_id: int, base: Color) -> Image:
 		var py := rng.randi_range(0, TILE_SIZE - 1)
 		img.set_pixel(px, py, base.lightened(rng.randf_range(-0.07, 0.07)))
 
+	# grass tufts on grass tiles
+	if tile_id == TILE_GRASS or tile_id == TILE_DARK_GRASS:
+		var tuft_count := 5 if tile_id == TILE_GRASS else 3
+		for _t in range(tuft_count):
+			var tx := rng.randi_range(4, TILE_SIZE - 5)
+			var ty := rng.randi_range(10, TILE_SIZE - 4)
+			var blade_count := rng.randi_range(2, 4)
+			for b in range(blade_count):
+				var bx    := tx + b * 2
+				var height := rng.randi_range(4, 8)
+				var lean   := rng.randi_range(-1, 1)
+				for h in range(height):
+					var progress := float(h) / float(height)
+					var col := base.darkened(0.18 - progress * 0.14)
+					var x := clampi(bx + int(lean * progress * 2), 0, TILE_SIZE - 1)
+					var y := clampi(ty - h, 0, TILE_SIZE - 1)
+					img.set_pixel(x, y, col)
+
 	# flower dots
 	if tile_id == TILE_FLOWER:
 		var accents := [Color(0.90, 0.30, 0.70), Color(0.95, 0.85, 0.20), Color(0.85, 0.30, 0.35)]

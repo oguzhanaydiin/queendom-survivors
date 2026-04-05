@@ -6,6 +6,10 @@ extends Node2D
 @export var enemy_scene: PackedScene
 @export var spawn_interval: float = 2.0
 
+const AIM_OFFSET_MAX := 15.0   # px the camera shifts toward the mouse
+const AIM_LERP_SPEED := 5.0
+const AIM_DEAD_ZONE  := 0.65   # fraction of half-screen with no effect
+
 var _player: Node2D
 var _map: BaseMap
 var _camera: Camera2D
@@ -86,10 +90,32 @@ func _on_player_died() -> void:
 func _process(delta: float) -> void:
 	if _game_over:
 		return
+	_update_camera_aim(delta)
 	_spawn_timer -= delta
 	if _spawn_timer <= 0:
 		_spawn_timer = spawn_interval
 		_spawn_enemy()
+
+
+func _update_camera_aim(delta: float) -> void:
+	var vp_size  := get_viewport().get_visible_rect().size
+	var mouse_vp := get_viewport().get_mouse_position()
+	var raw      := (mouse_vp - vp_size * 0.5) / (vp_size * 0.5)
+	# apply dead zone per axis: no movement until mouse passes AIM_DEAD_ZONE
+	var norm := Vector2(
+		_aim_axis(raw.x),
+		_aim_axis(raw.y)
+	).limit_length(1.0)
+	var target := norm * AIM_OFFSET_MAX
+	_camera.position = _camera.position.lerp(target, delta * AIM_LERP_SPEED)
+
+
+func _aim_axis(v: float) -> float:
+	var s := signf(v)
+	var a := absf(v)
+	if a <= AIM_DEAD_ZONE:
+		return 0.0
+	return s * (a - AIM_DEAD_ZONE) / (1.0 - AIM_DEAD_ZONE)
 
 
 func _spawn_enemy() -> void:
