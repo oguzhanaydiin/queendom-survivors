@@ -468,8 +468,8 @@ func _build_levelup_modal(options: Array) -> void:
 	_levelup_overlay.add_child(hint)
 
 	# Cards
-	const CARD_W   := 152.0
-	const CARD_H   := 212.0
+	const CARD_W   := 160.0
+	const CARD_H   := 236.0
 	const CARD_GAP := 18.0
 	var n := options.size()
 	if n == 0:
@@ -499,6 +499,9 @@ func _build_card(parent: Control, opt: Dictionary, x: float, y: float, w: float,
 	card.pressed.connect(func(): _on_upgrade_chosen(up_id))
 	parent.add_child(card)
 
+	const PAD_X := 12.0
+	const ICON_SZ := 56.0
+
 	# Type badge: WEAPON / ATTRIBUTE
 	var kind: String    = opt.get("type", "weapon")
 	var badge_text      := "WEAPON" if kind == "weapon" else "ATTRIBUTE"
@@ -512,38 +515,52 @@ func _build_card(parent: Control, opt: Dictionary, x: float, y: float, w: float,
 	badge_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	card.add_child(badge_lbl)
 
-	# Icon — sprite if loaded, unicode label otherwise
+	# Icon: fixed box + clip so large textures stay small; unicode behind sprite as fallback
+	var icon_holder := Panel.new()
+	icon_holder.position = Vector2((w - ICON_SZ) * 0.5, 20.0)
+	icon_holder.size = Vector2(ICON_SZ, ICON_SZ)
+	icon_holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	icon_holder.clip_contents = true
+	icon_holder.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
+	card.add_child(icon_holder)
+
+	var fallback_icon := Label.new()
+	fallback_icon.text = opt.get("icon", "?")
+	fallback_icon.set_anchors_preset(Control.PRESET_FULL_RECT)
+	fallback_icon.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	fallback_icon.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	fallback_icon.add_theme_font_size_override("font_size", 26)
+	fallback_icon.add_theme_color_override("font_color", c)
+	fallback_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	icon_holder.add_child(fallback_icon)
+
 	var card_tex: Texture2D = _textures.get(opt.get("id", ""), null)
 	if card_tex:
 		var tex_rect := TextureRect.new()
-		tex_rect.texture      = card_tex
-		tex_rect.position     = Vector2(w * 0.5 - 28.0, 18.0)
-		tex_rect.size         = Vector2(56.0, 56.0)
+		tex_rect.texture = card_tex
+		tex_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+		tex_rect.offset_left = 0
+		tex_rect.offset_top = 0
+		tex_rect.offset_right = 0
+		tex_rect.offset_bottom = 0
 		tex_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		tex_rect.expand_mode  = TextureRect.EXPAND_IGNORE_SIZE
+		tex_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		tex_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		card.add_child(tex_rect)
-	else:
-		var lbl := Label.new()
-		lbl.text = opt.get("icon", "?")
-		lbl.position = Vector2(0, 18)
-		lbl.size     = Vector2(w, 52)
-		lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		lbl.add_theme_font_size_override("font_size", 30)
-		lbl.add_theme_color_override("font_color", c)
-		lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		card.add_child(lbl)
+		icon_holder.add_child(tex_rect)
 
 	# Weapon/attr name
 	var name_lbl := Label.new()
 	name_lbl.text = opt.get("name", "???")
-	name_lbl.position = Vector2(0, 80)
-	name_lbl.size     = Vector2(w, 20)
+	name_lbl.position = Vector2(PAD_X, 82)
+	name_lbl.size     = Vector2(w - PAD_X * 2.0, 30)
 	name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	name_lbl.add_theme_font_size_override("font_size", 11)
+	name_lbl.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
+	name_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	name_lbl.max_lines_visible = 2
+	name_lbl.add_theme_font_size_override("font_size", 10)
 	name_lbl.add_theme_color_override("font_color", c)
 	name_lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
-	name_lbl.add_theme_constant_override("outline_size", 2)
+	name_lbl.add_theme_constant_override("outline_size", 1)
 	name_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	card.add_child(name_lbl)
 
@@ -553,29 +570,40 @@ func _build_card(parent: Control, opt: Dictionary, x: float, y: float, w: float,
 	if cur == 0:
 		lv_lbl.text = "NEW!"
 		lv_lbl.add_theme_color_override("font_color", Color(1.0, 0.88, 0.18))
-		lv_lbl.add_theme_font_size_override("font_size", 15)
+		lv_lbl.add_theme_font_size_override("font_size", 14)
 	else:
 		lv_lbl.text = "Lv %d  →  %d" % [cur, cur + 1]
 		lv_lbl.add_theme_color_override("font_color", Color(1.0, 0.95, 0.55))
-		lv_lbl.add_theme_font_size_override("font_size", 12)
-	lv_lbl.position = Vector2(0, 102)
-	lv_lbl.size     = Vector2(w, 22)
+		lv_lbl.add_theme_font_size_override("font_size", 11)
+	lv_lbl.position = Vector2(PAD_X, 114)
+	lv_lbl.size     = Vector2(w - PAD_X * 2.0, 18)
 	lv_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lv_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	card.add_child(lv_lbl)
 
-	# Description
+	# Description (clipped so lines never draw past card inner edge)
+	var desc_wrap := Panel.new()
+	desc_wrap.position = Vector2(PAD_X, 136)
+	desc_wrap.size = Vector2(w - PAD_X * 2.0, h - 136.0 - 10.0)
+	desc_wrap.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	desc_wrap.clip_contents = true
+	desc_wrap.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
+	card.add_child(desc_wrap)
+
 	var desc_lbl := Label.new()
 	desc_lbl.text = opt.get("desc", "")
-	desc_lbl.position = Vector2(8, 128)
-	desc_lbl.size     = Vector2(w - 16, 72)
+	desc_lbl.set_anchors_preset(Control.PRESET_FULL_RECT)
+	desc_lbl.offset_left = 2
+	desc_lbl.offset_top = 0
+	desc_lbl.offset_right = -2
+	desc_lbl.offset_bottom = 0
 	desc_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	desc_lbl.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
+	desc_lbl.vertical_alignment = VERTICAL_ALIGNMENT_TOP
 	desc_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	desc_lbl.add_theme_font_size_override("font_size", 10)
+	desc_lbl.add_theme_font_size_override("font_size", 9)
 	desc_lbl.add_theme_color_override("font_color", Color(0.80, 0.80, 0.84))
 	desc_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	card.add_child(desc_lbl)
+	desc_wrap.add_child(desc_lbl)
 
 func _on_upgrade_chosen(upgrade_id: String) -> void:
 	if _levelup_overlay:

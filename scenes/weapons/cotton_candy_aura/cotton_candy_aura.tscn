@@ -6,16 +6,21 @@
 [sub_resource type="CircleShape2D" id="CircleShape2D_1"]
 radius = 2.2
 
-[node name="CottonCandyAura" type="Area2D" unique_id=1977377426]
+[node name="CottonCandyAura" type="Area2D"]
+z_index = 40
+z_as_relative = false
 collision_layer = 4
 collision_mask = 2
 script = ExtResource("1")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=277458064]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("CircleShape2D_1")
 
-[node name="Sprite2D" type="Sprite2D" parent="." unique_id=681569759]
-modulate = Color(1, 1, 1, 0.9)
-position = Vector2(0, -2.3841858e-07)
-scale = Vector2(0.006, 0.006)
+[node name="Sprite2D" type="Sprite2D" parent="."]
+z_as_relative = false
+texture_filter = 0
+region_enabled = true
+region_rect = Rect2(458, 88, 460, 598)
+modulate = Color(1, 1, 1, 0)
+scale = Vector2(0.02, 0.02)
 texture = ExtResource("2")
