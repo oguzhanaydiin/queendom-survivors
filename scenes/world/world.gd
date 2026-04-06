@@ -113,7 +113,7 @@ func _update_camera_aim(delta: float) -> void:
 		_aim_axis(raw.y)
 	).limit_length(1.0)
 	var target := norm * AIM_OFFSET_MAX
-	_camera.position = _camera.position.lerp(target, delta * AIM_LERP_SPEED)
+	_camera.position = _camera.position.lerp(target, delta * AIM_LERP_SPEED).round()
 
 
 func _aim_axis(v: float) -> float:
