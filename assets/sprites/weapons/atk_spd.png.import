@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dvmmiiu771m5o"
-path="res://.godot/imported/shoot_loop.png-609ca0c661f8abdf2bb9307b0aa40467.ctex"
+uid="uid://cqnjgqkybnm6m"
+path="res://.godot/imported/atk_spd.png-894ab3a39e3fef8ed873fc87b7829cd9.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/shoot_loop.png"
-dest_files=["res://.godot/imported/shoot_loop.png-609ca0c661f8abdf2bb9307b0aa40467.ctex"]
+source_file="res://assets/sprites/weapons/atk_spd.png"
+dest_files=["res://.godot/imported/atk_spd.png-894ab3a39e3fef8ed873fc87b7829cd9.ctex"]
 
 [params]
 

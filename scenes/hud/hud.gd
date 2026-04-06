@@ -20,19 +20,14 @@ var _a_cells: Array = []   # 6 attr cells    (row 1)
 var _levelup_overlay: Control = null
 var _levelup_callback: Callable
 
-# Icon sprite sheet
-const ICON_SHEET_PATH := "res://assets/sprites/weapon_icons.png"
-const ICON_COLS := 6
-const ICON_ROWS := 2
-var _icon_sheet: Texture2D = null
-var _icon_cell_w: float    = 0.0
-var _icon_cell_h: float    = 0.0
+# Individual icon textures, keyed by weapon/attr id
+var _textures: Dictionary = {}
 
 # ── Layout constants ───────────────────────────────────────────────────────────
 const BORDER     = 3
 const STRIP_H    = 38
 const LVL_W      = 80
-const HP_ICON_W  = 38
+const HP_W  = 38
 const HP_STRIP_W = 224
 const HP_PAD     = 14
 const TIMER_H    = 26
@@ -41,30 +36,30 @@ const MODAL_W    = 480
 const MODAL_H    = 280
 
 # Weapon grid
-const CELL_W   = 62
-const CELL_H   = 54
+const CELL_W   = 64
+const CELL_H   = 62
 const CELL_GAP = 2
 const ROW_GAP  = 3
 const GRID_PAD = 8
 
-const WEAPON_KEYS: Array = ["slime_ball", "fire_orb", "ice_shard", "thunder", "poison", "wind_blade"]
+const WEAPON_KEYS: Array = ["ice_cream", "toffee_bomb", "rock_candy", "lollipop", "cotton_candy", "candy_cane"]
 const ATTR_KEYS:   Array = ["speed", "damage", "atk_spd", "area", "duration", "magnet"]
 
 const W_INFO: Array = [
-	{"icon": "◉",  "color": Color(0.25, 0.88, 0.35), "name": "SLIME BALL"},
-	{"icon": "◈",  "color": Color(0.95, 0.42, 0.08), "name": "FIRE ORB"},
-	{"icon": "❄",  "color": Color(0.42, 0.72, 1.00), "name": "ICE SHARD"},
-	{"icon": "⚡", "color": Color(0.92, 0.88, 0.12), "name": "THUNDER"},
-	{"icon": "☁",  "color": Color(0.52, 0.88, 0.22), "name": "POISON"},
-	{"icon": "≋",  "color": Color(0.72, 0.92, 0.98), "name": "WIND BLADE"},
+	{"icon": "◉",  "color": Color(0.98, 0.76, 0.62), "name": "ICE CREAM"},
+	{"icon": "◈",  "color": Color(0.90, 0.62, 0.10), "name": "TOFFEE BOMB"},
+	{"icon": "◆",  "color": Color(0.42, 0.72, 1.00), "name": "ROCK CANDY"},
+	{"icon": "⊙",  "color": Color(0.98, 0.25, 0.72), "name": "LOLLIPOP"},
+	{"icon": "☁",  "color": Color(0.98, 0.72, 0.88), "name": "COTTON CANDY"},
+	{"icon": "∩",  "color": Color(0.95, 0.18, 0.18), "name": "CANDY CANE"},
 ]
 const A_INFO: Array = [
-	{"icon": "▶▶", "color": Color(0.25, 0.88, 0.35), "name": "SPEED"},
-	{"icon": "⚔",  "color": Color(0.95, 0.42, 0.08), "name": "DAMAGE"},
+	{"icon": "▶▶", "color": Color(0.98, 0.76, 0.62), "name": "SPEED"},
+	{"icon": "⚔",  "color": Color(0.90, 0.62, 0.10), "name": "DAMAGE"},
 	{"icon": "↺",  "color": Color(0.42, 0.72, 1.00), "name": "ATK SPD"},
-	{"icon": "◎",  "color": Color(0.92, 0.88, 0.12), "name": "AREA"},
-	{"icon": "⏱",  "color": Color(0.52, 0.88, 0.22), "name": "DURATION"},
-	{"icon": "⊕",  "color": Color(0.72, 0.92, 0.98), "name": "MAGNET"},
+	{"icon": "◎",  "color": Color(0.98, 0.25, 0.72), "name": "AREA"},
+	{"icon": "⏱",  "color": Color(0.98, 0.72, 0.88), "name": "DURATION"},
+	{"icon": "⊕",  "color": Color(0.95, 0.18, 0.18), "name": "MAGNET"},
 ]
 
 # ── Palette ────────────────────────────────────────────────────────────────────
@@ -80,9 +75,9 @@ const C_HEART_BG  = Color(0.24, 0.05, 0.05)
 const C_HP_BAR_BG = Color(0.14, 0.03, 0.03)
 const C_HP_FILL   = Color(0.96, 0.12, 0.10)
 
-const C_LOCKED_BG   = Color(0.06, 0.06, 0.09, 0.88)
-const C_LOCKED_BDR  = Color(0.11, 0.11, 0.16)
-const C_LOCKED_TEXT = Color(0.28, 0.28, 0.34)
+const C_LOCKED_BG   = Color(0.20, 0.20, 0.23, 0.88)
+const C_LOCKED_BDR  = Color(0.30, 0.30, 0.36)
+const C_LOCKED_TEXT = Color(0.42, 0.42, 0.48)
 const C_CELL_BG     = Color(0.04, 0.05, 0.08, 0.92)
 
 # ── Init ───────────────────────────────────────────────────────────────────────
@@ -94,7 +89,7 @@ func _ready():
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(root)
 
-	_load_icon_sheet()
+	_load_icons()
 	_build_xp_strip(root)
 	_build_weapon_grid(root)
 	_build_timer_label(root)
@@ -109,6 +104,14 @@ func _process(delta: float) -> void:
 	_elapsed_time += delta
 	if _timer_label:
 		_timer_label.text = _fmt_time(_elapsed_time)
+
+# ── Icon textures ──────────────────────────────────────────────────────────────
+func _load_icons() -> void:
+	var all_keys: Array = WEAPON_KEYS + ATTR_KEYS
+	for key in all_keys:
+		var path := "res://assets/sprites/weapons/%s.png" % key
+		if ResourceLoader.exists(path):
+			_textures[key] = load(path)
 
 # ── XP bar ─────────────────────────────────────────────────────────────────────
 func _build_xp_strip(root: Control) -> void:
@@ -203,7 +206,7 @@ func _build_hp_strip(root: Control) -> void:
 
 	var heart_panel = Panel.new()
 	heart_panel.position = Vector2(0, 0)
-	heart_panel.size = Vector2(HP_ICON_W, STRIP_H)
+	heart_panel.size = Vector2(HP_W, STRIP_H)
 	heart_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	heart_panel.add_theme_stylebox_override("panel", _pbox(C_HEART_BG, C_HP_BDR))
 	strip.add_child(heart_panel)
@@ -211,7 +214,7 @@ func _build_hp_strip(root: Control) -> void:
 	var heart_lbl = Label.new()
 	heart_lbl.text = "♥"
 	heart_lbl.position = Vector2(0, 0)
-	heart_lbl.size = Vector2(HP_ICON_W, STRIP_H)
+	heart_lbl.size = Vector2(HP_W, STRIP_H)
 	heart_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	heart_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	heart_lbl.add_theme_font_size_override("font_size", 18)
@@ -224,7 +227,7 @@ func _build_hp_strip(root: Control) -> void:
 	_hp_bar.anchor_right  = 1.0
 	_hp_bar.anchor_top    = 0.0
 	_hp_bar.anchor_bottom = 1.0
-	_hp_bar.offset_left   = HP_ICON_W + BORDER
+	_hp_bar.offset_left   = HP_W + BORDER
 	_hp_bar.offset_right  = -BORDER
 	_hp_bar.offset_top    = BORDER
 	_hp_bar.offset_bottom = -BORDER
@@ -241,7 +244,7 @@ func _build_hp_strip(root: Control) -> void:
 	_hp_num_label.anchor_right  = 1.0
 	_hp_num_label.anchor_top    = 0.0
 	_hp_num_label.anchor_bottom = 1.0
-	_hp_num_label.offset_left   = HP_ICON_W
+	_hp_num_label.offset_left   = HP_W
 	_hp_num_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_hp_num_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_hp_num_label.add_theme_font_size_override("font_size", 14)
@@ -335,20 +338,37 @@ func _make_grid_cell(root: Control, x: float, y: float) -> Dictionary:
 	panel.add_theme_stylebox_override("panel", _pbox(C_LOCKED_BG, C_LOCKED_BDR, 1))
 	root.add_child(panel)
 
-	var icon_lbl := Label.new()
-	icon_lbl.anchor_left   = 0.0
-	icon_lbl.anchor_right  = 1.0
-	icon_lbl.anchor_top    = 0.0
-	icon_lbl.anchor_bottom = 1.0
-	icon_lbl.offset_top    = 4
-	icon_lbl.offset_bottom = -16
-	icon_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	icon_lbl.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
-	icon_lbl.add_theme_font_size_override("font_size", 20)
-	icon_lbl.add_theme_color_override("font_color", C_LOCKED_TEXT)
-	icon_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	icon_lbl.text = "?"
-	panel.add_child(icon_lbl)
+	# TextureRect for sprite icons (hidden until a texture is assigned)
+	var tex_rect := TextureRect.new()
+	tex_rect.anchor_left   = 0.0
+	tex_rect.anchor_right  = 1.0
+	tex_rect.anchor_top    = 0.0
+	tex_rect.anchor_bottom = 1.0
+	tex_rect.offset_top    = 2
+	tex_rect.offset_left   = 3
+	tex_rect.offset_right  = -3
+	tex_rect.offset_bottom = -14
+	tex_rect.stretch_mode  = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	tex_rect.expand_mode   = TextureRect.EXPAND_IGNORE_SIZE
+	tex_rect.mouse_filter  = Control.MOUSE_FILTER_IGNORE
+	tex_rect.visible       = false
+	panel.add_child(tex_rect)
+
+	# Label fallback (shown when no texture available)
+	var lbl := Label.new()
+	lbl.anchor_left   = 0.0
+	lbl.anchor_right  = 1.0
+	lbl.anchor_top    = 0.0
+	lbl.anchor_bottom = 1.0
+	lbl.offset_top    = 2
+	lbl.offset_bottom = -14
+	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
+	lbl.add_theme_font_size_override("font_size", 20)
+	lbl.add_theme_color_override("font_color", C_LOCKED_TEXT)
+	lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	lbl.text = ""
+	panel.add_child(lbl)
 
 	var lv_lbl := Label.new()
 	lv_lbl.anchor_left   = 0.0
@@ -365,27 +385,35 @@ func _make_grid_cell(root: Control, x: float, y: float) -> Dictionary:
 	lv_lbl.text = "---"
 	panel.add_child(lv_lbl)
 
-	return {"panel": panel, "icon_lbl": icon_lbl, "lv_lbl": lv_lbl}
+	return {"panel": panel, "tex_rect": tex_rect, "lbl": lbl, "lv_lbl": lv_lbl}
 
 func update_weapons(weapon_levels: Dictionary, attr_levels: Dictionary) -> void:
 	for i in range(6):
-		_refresh_cell(_w_cells[i], weapon_levels.get(WEAPON_KEYS[i], 0), W_INFO[i])
-		_refresh_cell(_a_cells[i], attr_levels.get(ATTR_KEYS[i],   0), A_INFO[i])
+		_refresh_cell(_w_cells[i], weapon_levels.get(WEAPON_KEYS[i], 0), W_INFO[i], WEAPON_KEYS[i])
+		_refresh_cell(_a_cells[i], attr_levels.get(ATTR_KEYS[i],   0), A_INFO[i], ATTR_KEYS[i])
 
-func _refresh_cell(cell: Dictionary, lv: int, info: Dictionary) -> void:
+func _refresh_cell(cell: Dictionary, lv: int, info: Dictionary, key: String) -> void:
+	var tex: Texture2D = _textures.get(key, null)
+	var has_tex := tex != null
+	cell.tex_rect.visible  = has_tex
+	cell.lbl.visible  = not has_tex
+
 	if lv <= 0:
 		cell.panel.add_theme_stylebox_override("panel", _pbox(C_LOCKED_BG, C_LOCKED_BDR, 1))
-		cell.icon_lbl.text = "?"
-		cell.icon_lbl.add_theme_color_override("font_color", C_LOCKED_TEXT)
-		cell.lv_lbl.text   = "---"
-		cell.lv_lbl.add_theme_color_override("font_color", C_LOCKED_TEXT)
+		cell.tex_rect.visible = false
+		cell.lbl.visible = false
+		cell.lv_lbl.text      = ""
 	else:
 		var c: Color = info["color"]
 		var bg_c  := Color(c.r * 0.12, c.g * 0.12, c.b * 0.12, 0.94)
 		var bdr_c := Color(c.r * 0.50, c.g * 0.50, c.b * 0.50)
 		cell.panel.add_theme_stylebox_override("panel", _pbox(bg_c, bdr_c, 1))
-		cell.icon_lbl.text = info["icon"]
-		cell.icon_lbl.add_theme_color_override("font_color", c)
+		if has_tex:
+			cell.tex_rect.texture  = tex
+			cell.tex_rect.modulate = Color.WHITE
+		else:
+			cell.lbl.text = info["icon"]
+			cell.lbl.add_theme_color_override("font_color", c)
 		cell.lv_lbl.text   = "Lv %d" % lv
 		cell.lv_lbl.add_theme_color_override("font_color", Color(c.r * 0.85, c.g * 0.85, c.b * 0.85))
 
@@ -440,8 +468,8 @@ func _build_levelup_modal(options: Array) -> void:
 	_levelup_overlay.add_child(hint)
 
 	# Cards
-	const CARD_W   := 148.0
-	const CARD_H   := 196.0
+	const CARD_W   := 152.0
+	const CARD_H   := 212.0
 	const CARD_GAP := 18.0
 	var n := options.size()
 	if n == 0:
@@ -471,47 +499,76 @@ func _build_card(parent: Control, opt: Dictionary, x: float, y: float, w: float,
 	card.pressed.connect(func(): _on_upgrade_chosen(up_id))
 	parent.add_child(card)
 
-	# Icon
-	var icon_lbl := Label.new()
-	icon_lbl.text = opt.get("icon", "?")
-	icon_lbl.position = Vector2(0, 18)
-	icon_lbl.size     = Vector2(w, 48)
-	icon_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	icon_lbl.add_theme_font_size_override("font_size", 30)
-	icon_lbl.add_theme_color_override("font_color", c)
-	icon_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	card.add_child(icon_lbl)
+	# Type badge: WEAPON / ATTRIBUTE
+	var kind: String    = opt.get("type", "weapon")
+	var badge_text      := "WEAPON" if kind == "weapon" else "ATTRIBUTE"
+	var badge_lbl       := Label.new()
+	badge_lbl.text      = badge_text
+	badge_lbl.position  = Vector2(0, 6)
+	badge_lbl.size      = Vector2(w, 14)
+	badge_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	badge_lbl.add_theme_font_size_override("font_size", 8)
+	badge_lbl.add_theme_color_override("font_color", Color(c.r * 0.75, c.g * 0.75, c.b * 0.75, 0.85))
+	badge_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	card.add_child(badge_lbl)
+
+	# Icon — sprite if loaded, unicode label otherwise
+	var card_tex: Texture2D = _textures.get(opt.get("id", ""), null)
+	if card_tex:
+		var tex_rect := TextureRect.new()
+		tex_rect.texture      = card_tex
+		tex_rect.position     = Vector2(w * 0.5 - 28.0, 18.0)
+		tex_rect.size         = Vector2(56.0, 56.0)
+		tex_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		tex_rect.expand_mode  = TextureRect.EXPAND_IGNORE_SIZE
+		tex_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		card.add_child(tex_rect)
+	else:
+		var lbl := Label.new()
+		lbl.text = opt.get("icon", "?")
+		lbl.position = Vector2(0, 18)
+		lbl.size     = Vector2(w, 52)
+		lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		lbl.add_theme_font_size_override("font_size", 30)
+		lbl.add_theme_color_override("font_color", c)
+		lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		card.add_child(lbl)
 
 	# Weapon/attr name
 	var name_lbl := Label.new()
 	name_lbl.text = opt.get("name", "???")
-	name_lbl.position = Vector2(0, 74)
-	name_lbl.size     = Vector2(w, 22)
+	name_lbl.position = Vector2(0, 80)
+	name_lbl.size     = Vector2(w, 20)
 	name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	name_lbl.add_theme_font_size_override("font_size", 12)
+	name_lbl.add_theme_font_size_override("font_size", 11)
 	name_lbl.add_theme_color_override("font_color", c)
 	name_lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
 	name_lbl.add_theme_constant_override("outline_size", 2)
 	name_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	card.add_child(name_lbl)
 
-	# Level arrow  "Lv 1  →  2"
-	var cur: int = opt.get("current_lv", 1)
-	var lv_lbl := Label.new()
-	lv_lbl.text = "Lv %d  →  %d" % [cur, cur + 1]
-	lv_lbl.position = Vector2(0, 104)
+	# Level: "NEW!" for first unlock, "Lv X → X+1" for upgrades
+	var cur: int    = opt.get("current_lv", 0)
+	var lv_lbl      := Label.new()
+	if cur == 0:
+		lv_lbl.text = "NEW!"
+		lv_lbl.add_theme_color_override("font_color", Color(1.0, 0.88, 0.18))
+		lv_lbl.add_theme_font_size_override("font_size", 15)
+	else:
+		lv_lbl.text = "Lv %d  →  %d" % [cur, cur + 1]
+		lv_lbl.add_theme_color_override("font_color", Color(1.0, 0.95, 0.55))
+		lv_lbl.add_theme_font_size_override("font_size", 12)
+	lv_lbl.position = Vector2(0, 102)
 	lv_lbl.size     = Vector2(w, 22)
 	lv_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	lv_lbl.add_theme_font_size_override("font_size", 13)
-	lv_lbl.add_theme_color_override("font_color", Color(1.0, 0.95, 0.55))
 	lv_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	card.add_child(lv_lbl)
 
 	# Description
 	var desc_lbl := Label.new()
 	desc_lbl.text = opt.get("desc", "")
-	desc_lbl.position = Vector2(8, 136)
-	desc_lbl.size     = Vector2(w - 16, 48)
+	desc_lbl.position = Vector2(8, 128)
+	desc_lbl.size     = Vector2(w - 16, 72)
 	desc_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	desc_lbl.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
 	desc_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
