@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://br6oagofln8ys"
-path="res://.godot/imported/Orc_idletowalk.png-debb6e9338e57033a7313b6ebb983713.ctex"
+uid="uid://c3piskgjgk1fj"
+path="res://.godot/imported/magnet.png-fb4121452fba4b0cfc7c855d3a179340.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/Orc_idletowalk.png"
-dest_files=["res://.godot/imported/Orc_idletowalk.png-debb6e9338e57033a7313b6ebb983713.ctex"]
+source_file="res://assets/sprites/weapons/magnet.png"
+dest_files=["res://.godot/imported/magnet.png-fb4121452fba4b0cfc7c855d3a179340.ctex"]
 
 [params]
 

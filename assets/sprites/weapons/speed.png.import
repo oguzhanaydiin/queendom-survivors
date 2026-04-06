@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dn6atd5ma7hnj"
-path="res://.godot/imported/Pawn_Idle.png-8ec19f6213e7c5f60da8fda1a1039d0a.ctex"
+uid="uid://lcp1cy63nkoc"
+path="res://.godot/imported/speed.png-6488ae4c925f59c0d03e3316c63f4c64.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/Pawn_Idle.png"
-dest_files=["res://.godot/imported/Pawn_Idle.png-8ec19f6213e7c5f60da8fda1a1039d0a.ctex"]
+source_file="res://assets/sprites/weapons/speed.png"
+dest_files=["res://.godot/imported/speed.png-6488ae4c925f59c0d03e3316c63f4c64.ctex"]
 
 [params]
 

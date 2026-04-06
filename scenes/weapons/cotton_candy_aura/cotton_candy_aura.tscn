@@ -1,0 +1,26 @@
+[gd_scene format=3 uid="uid://du6vs07bw24la"]
+
+[ext_resource type="Script" uid="uid://h1hyi7te1ot6" path="res://scenes/weapons/cotton_candy_aura/cotton_candy_aura.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://d2hyom4h1d5ss" path="res://assets/sprites/weapons/cotton_candy.png" id="2"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_1"]
+radius = 2.2
+
+[node name="CottonCandyAura" type="Area2D"]
+z_index = 40
+z_as_relative = false
+collision_layer = 4
+collision_mask = 2
+script = ExtResource("1")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_1")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+z_as_relative = false
+texture_filter = 0
+region_enabled = true
+region_rect = Rect2(458, 88, 460, 598)
+modulate = Color(1, 1, 1, 0)
+scale = Vector2(0.02, 0.02)
+texture = ExtResource("2")
