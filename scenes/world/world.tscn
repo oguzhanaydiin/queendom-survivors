@@ -1,7 +1,6 @@
 [gd_scene format=3 uid="uid://c5eody6xp8laa"]
 
 [ext_resource type="Script" uid="uid://bdgv5c273j8lt" path="res://scenes/world/world.gd" id="1"]
-[ext_resource type="PackedScene" uid="uid://cqymvyl8wt6vy" path="res://scenes/enemies/orc/orc.tscn" id="2"]
 [ext_resource type="PackedScene" uid="uid://pawn001player" path="res://scenes/characters/player/player.tscn" id="3"]
 [ext_resource type="PackedScene" uid="uid://enchforest001" path="res://scenes/maps/enchanted_forest/enchanted_forest.tscn" id="4"]
 
@@ -9,6 +8,5 @@
 script = ExtResource("1")
 character_scene = ExtResource("3")
 map_scene = ExtResource("4")
-enemy_scene = ExtResource("2")
 
 [node name="Camera2D" type="Camera2D" parent="."]

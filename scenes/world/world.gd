@@ -3,8 +3,12 @@ extends Node2D
 # Assign in the editor (or from a character-select / stage-select screen).
 @export var character_scene: PackedScene
 @export var map_scene: PackedScene
-@export var enemy_scene: PackedScene
 @export var spawn_interval: float = 2.0
+
+const ENEMY_SCENES: Array[PackedScene] = [
+	preload("res://scenes/enemies/acorn.tscn"),
+	preload("res://scenes/enemies/maple.tscn"),
+]
 
 const AIM_OFFSET_MAX := 15.0   # px the camera shifts toward the mouse
 const AIM_LERP_SPEED := 5.0
@@ -125,7 +129,7 @@ func _aim_axis(v: float) -> float:
 
 
 func _spawn_enemy() -> void:
-	if not enemy_scene or not _camera:
+	if ENEMY_SCENES.is_empty() or not _camera:
 		return
 
 	var vp_size   := get_viewport().get_visible_rect().size
@@ -142,6 +146,6 @@ func _spawn_enemy() -> void:
 		2: spawn_pos = Vector2(cam_center.x - half_w - margin, cam_center.y + randf_range(-half_h, half_h))
 		3: spawn_pos = Vector2(cam_center.x + half_w + margin, cam_center.y + randf_range(-half_h, half_h))
 
-	var enemy := enemy_scene.instantiate()
+	var enemy := ENEMY_SCENES[randi() % ENEMY_SCENES.size()].instantiate()
 	enemy.global_position = spawn_pos
 	add_child(enemy)

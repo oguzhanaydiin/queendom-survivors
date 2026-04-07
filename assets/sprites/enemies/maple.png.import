@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://c7g3uaidhp4xu"
-path="res://.godot/imported/Orc_idle.png-1d59e56a61a3c75e9a6ca393a0b8cd76.ctex"
+uid="uid://bm6bw3drbtv7p"
+path="res://.godot/imported/maple.png-3ee8401106443d3a32017f4038fdcd6b.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/Orc_idle.png"
-dest_files=["res://.godot/imported/Orc_idle.png-1d59e56a61a3c75e9a6ca393a0b8cd76.ctex"]
+source_file="res://assets/sprites/enemies/maple.png"
+dest_files=["res://.godot/imported/maple.png-3ee8401106443d3a32017f4038fdcd6b.ctex"]
 
 [params]
 
