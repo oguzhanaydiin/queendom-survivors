@@ -15,7 +15,8 @@ func _ready() -> void:
 	for i in range(count):
 		var sprite := Sprite2D.new()
 		sprite.texture = $Sprite2D.texture
-		sprite.scale   = Vector2(0.022, 0.022)
+		# Match pre-resize look: ~texture_width * scale ≈ 1376 * 0.10 → scale ≈ 0.8 @ 172px wide.
+		sprite.scale   = Vector2(0.8, 0.8)
 		var angle_offset := TAU * i / count
 		sprite.position = Vector2(cos(angle_offset), sin(angle_offset)) * sweep_radius * 0.6
 		sprite.rotation = angle_offset
