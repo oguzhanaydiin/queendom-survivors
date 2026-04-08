@@ -19,7 +19,7 @@ animations = [{
 }]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_hit"]
-radius = 36.0
+radius = 21.00595
 
 [node name="Acorn" type="CharacterBody2D" unique_id=1303884249]
 scale = Vector2(2, 2)
@@ -29,12 +29,10 @@ script = ExtResource("1")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=2105533796]
 texture_filter = 1
-position = Vector2(0.99999994, 14.499999)
-scale = Vector2(0.12, 0.12)
+scale = Vector2(0.08, 0.08)
 sprite_frames = SubResource("SF_1")
 animation = &"idle"
 offset = Vector2(0, -8)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1186746344]
-position = Vector2(0, 12)
 shape = SubResource("CircleShape2D_hit")
