@@ -1,0 +1,45 @@
+[gd_scene format=3 uid="uid://b8mushrmenemy1"]
+
+[ext_resource type="Script" path="res://scenes/enemies/enemy.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/mushroom.png" id="2"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_mush"]
+atlas = ExtResource("2")
+region = Rect2(0, 0, 550, 632)
+
+[sub_resource type="SpriteFrames" id="SF_1"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_mush")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 5.0
+}]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_hit"]
+radius = 40.0
+
+[node name="Mushroom" type="CharacterBody2D"]
+scale = Vector2(2, 2)
+collision_layer = 2
+collision_mask = 0
+script = ExtResource("1")
+speed = 82.0
+xp_value = 22
+damage_amount = 16
+damage_interval = 0.82
+melee_range = 128.0
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+texture_filter = 1
+position = Vector2(0, 26)
+scale = Vector2(0.12, 0.12)
+sprite_frames = SubResource("SF_1")
+animation = &"idle"
+offset = Vector2(0, -22)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, 22)
+shape = SubResource("CircleShape2D_hit")

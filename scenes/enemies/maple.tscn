@@ -26,6 +26,11 @@ scale = Vector2(2, 2)
 collision_layer = 2
 collision_mask = 0
 script = ExtResource("1")
+speed = 70.0
+xp_value = 14
+damage_amount = 12
+damage_interval = 0.92
+melee_range = 122.0
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1012981733]
 texture_filter = 1

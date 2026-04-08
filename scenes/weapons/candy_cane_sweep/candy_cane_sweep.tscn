@@ -17,4 +17,4 @@ shape = SubResource("CircleShape2D_1")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
 texture = ExtResource("2")
-scale = Vector2(0.032, 0.032)
+scale = Vector2(0.007, 0.007)

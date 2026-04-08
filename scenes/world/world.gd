@@ -9,12 +9,19 @@ extends Node2D
 ## After this many seconds, spawn interval reaches spawn_interval_min.
 @export var spawn_pressure_ramp_sec: float = 600.0
 
-## Only acorns spawn before this; then maples are mixed in gradually.
+## Tier 1 = acorn only before this; then tier 2 (maple) mixes in.
 @export var maple_unlock_sec: float = 60.0
-## Seconds after maple_unlock_sec over which maple spawn share rises to maple_weight_max.
-@export var maple_mix_ramp_sec: float = 120.0
-## At full mix, this fraction of spawns are maples (rest acorns).
-@export var maple_weight_max: float = 0.5
+## Seconds after maple_unlock_sec over which P(maple | not mushroom) rises to maple_weight_max.
+@export var maple_mix_ramp_sec: float = 140.0
+## Among acorn+maple spawns, max chance to pick maple once unlocked (tier 2).
+@export var maple_weight_max: float = 0.52
+
+## Tier 3 (mushroom) starts after this (seconds). Tuned for ~10 min first-map pacing.
+@export var mushroom_unlock_sec: float = 300.0
+## Seconds after mushroom_unlock_sec over which P(mushroom) rises to mushroom_weight_max.
+@export var mushroom_mix_ramp_sec: float = 280.0
+## Max overall chance to spawn mushroom (tier 3); remainder is acorn/maple split by tier 2 curve.
+@export var mushroom_weight_max: float = 0.4
 
 const AIM_OFFSET_MAX := 15.0   # px the camera shifts toward the mouse
 const AIM_LERP_SPEED := 5.0
@@ -22,6 +29,7 @@ const AIM_DEAD_ZONE  := 0.65   # fraction of half-screen with no effect
 
 const ACORN_SCENE: PackedScene = preload("res://scenes/enemies/acorn.tscn")
 const MAPLE_SCENE: PackedScene = preload("res://scenes/enemies/maple.tscn")
+const MUSHROOM_SCENE: PackedScene = preload("res://scenes/enemies/mushroom.tscn")
 
 var _player: Node2D
 var _map: BaseMap
@@ -150,14 +158,30 @@ func _spawn_period_sec() -> float:
 	return lerpf(spawn_interval, spawn_interval_min, t)
 
 
-func _pick_enemy_scene() -> PackedScene:
+func _tier2_share_given_not_mushroom() -> float:
 	if _run_time < maple_unlock_sec:
-		return ACORN_SCENE
-	var mix_t := 0.0
+		return 0.0
+	var mt := 0.0
 	if maple_mix_ramp_sec > 0.0:
-		mix_t = smoothstep(0.0, maple_mix_ramp_sec, _run_time - maple_unlock_sec)
-	var maple_chance: float = mix_t * clampf(maple_weight_max, 0.0, 1.0)
-	if randf() < maple_chance:
+		mt = smoothstep(0.0, maple_mix_ramp_sec, _run_time - maple_unlock_sec)
+	return mt * clampf(maple_weight_max, 0.0, 1.0)
+
+
+func _tier3_mushroom_share() -> float:
+	if _run_time < mushroom_unlock_sec:
+		return 0.0
+	var ut := 0.0
+	if mushroom_mix_ramp_sec > 0.0:
+		ut = smoothstep(0.0, mushroom_mix_ramp_sec, _run_time - mushroom_unlock_sec)
+	return ut * clampf(mushroom_weight_max, 0.0, 1.0)
+
+
+func _pick_enemy_scene() -> PackedScene:
+	var p_mushroom := _tier3_mushroom_share()
+	if randf() < p_mushroom:
+		return MUSHROOM_SCENE
+	var p_maple := _tier2_share_given_not_mushroom()
+	if randf() < p_maple:
 		return MAPLE_SCENE
 	return ACORN_SCENE
 
