@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dunfaxhf0i3g4"
-path="res://.godot/imported/Orc_walk.png-19445f70abb968bdee1a129dcd6f5f98.ctex"
+uid="uid://ck6omcdxr8rcf"
+path="res://.godot/imported/mushroom.png-6926d8d5b0b12e0ed1da0e50c12f1c5d.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/Orc_walk.png"
-dest_files=["res://.godot/imported/Orc_walk.png-19445f70abb968bdee1a129dcd6f5f98.ctex"]
+source_file="res://assets/sprites/enemies/mushroom.png"
+dest_files=["res://.godot/imported/mushroom.png-6926d8d5b0b12e0ed1da0e50c12f1c5d.ctex"]
 
 [params]
 

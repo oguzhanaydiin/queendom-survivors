@@ -1,0 +1,45 @@
+[gd_scene format=3 uid="uid://c4dy8s8dgwiqq"]
+
+[ext_resource type="Script" uid="uid://bfv7scyt2mkto" path="res://scenes/enemies/enemy.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://bm6bw3drbtv7p" path="res://assets/sprites/enemies/maple.png" id="2"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_dfe6n"]
+atlas = ExtResource("2")
+region = Rect2(0, 0, 648, 678)
+
+[sub_resource type="SpriteFrames" id="SF_1"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_dfe6n")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 5.0
+}]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_hit"]
+radius = 38.0
+
+[node name="Maple" type="CharacterBody2D" unique_id=1936634032]
+scale = Vector2(2, 2)
+collision_layer = 2
+collision_mask = 0
+script = ExtResource("1")
+speed = 70.0
+xp_value = 14
+damage_amount = 12
+damage_interval = 0.92
+melee_range = 122.0
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1012981733]
+texture_filter = 1
+position = Vector2(0, 31.999998)
+scale = Vector2(0.12, 0.12)
+sprite_frames = SubResource("SF_1")
+animation = &"idle"
+offset = Vector2(0, -20)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=90685259]
+position = Vector2(0, 28)
+shape = SubResource("CircleShape2D_hit")
