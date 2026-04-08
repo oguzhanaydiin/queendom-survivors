@@ -3,16 +3,25 @@ extends Node2D
 # Assign in the editor (or from a character-select / stage-select screen).
 @export var character_scene: PackedScene
 @export var map_scene: PackedScene
+## Seconds between spawn ticks at run start (gets faster toward spawn_interval_min).
 @export var spawn_interval: float = 2.0
+@export var spawn_interval_min: float = 0.45
+## After this many seconds, spawn interval reaches spawn_interval_min.
+@export var spawn_pressure_ramp_sec: float = 600.0
 
-const ENEMY_SCENES: Array[PackedScene] = [
-	preload("res://scenes/enemies/acorn.tscn"),
-	preload("res://scenes/enemies/maple.tscn"),
-]
+## Only acorns spawn before this; then maples are mixed in gradually.
+@export var maple_unlock_sec: float = 60.0
+## Seconds after maple_unlock_sec over which maple spawn share rises to maple_weight_max.
+@export var maple_mix_ramp_sec: float = 120.0
+## At full mix, this fraction of spawns are maples (rest acorns).
+@export var maple_weight_max: float = 0.5
 
 const AIM_OFFSET_MAX := 15.0   # px the camera shifts toward the mouse
 const AIM_LERP_SPEED := 5.0
 const AIM_DEAD_ZONE  := 0.65   # fraction of half-screen with no effect
+
+const ACORN_SCENE: PackedScene = preload("res://scenes/enemies/acorn.tscn")
+const MAPLE_SCENE: PackedScene = preload("res://scenes/enemies/maple.tscn")
 
 var _player: Node2D
 var _map: BaseMap
@@ -20,10 +29,11 @@ var _camera: Camera2D
 var _hud: CanvasLayer
 var _spawn_timer: float
 var _game_over: bool = false
+var _run_time: float = 0.0
 
 
 func _ready() -> void:
-	_spawn_timer = spawn_interval
+	_spawn_timer = _spawn_period_sec()
 	_spawn_map()
 	_spawn_player()
 	_setup_camera()
@@ -100,10 +110,11 @@ func _on_level_up_available(options: Array) -> void:
 func _process(delta: float) -> void:
 	if _game_over:
 		return
+	_run_time += delta
 	_update_camera_aim(delta)
 	_spawn_timer -= delta
 	if _spawn_timer <= 0:
-		_spawn_timer = spawn_interval
+		_spawn_timer = _spawn_period_sec()
 		_spawn_enemy()
 
 
@@ -128,8 +139,31 @@ func _aim_axis(v: float) -> float:
 	return s * (a - AIM_DEAD_ZONE) / (1.0 - AIM_DEAD_ZONE)
 
 
+func _spawn_pressure_t() -> float:
+	if spawn_pressure_ramp_sec <= 0.0:
+		return 1.0
+	return smoothstep(0.0, spawn_pressure_ramp_sec, _run_time)
+
+
+func _spawn_period_sec() -> float:
+	var t := _spawn_pressure_t()
+	return lerpf(spawn_interval, spawn_interval_min, t)
+
+
+func _pick_enemy_scene() -> PackedScene:
+	if _run_time < maple_unlock_sec:
+		return ACORN_SCENE
+	var mix_t := 0.0
+	if maple_mix_ramp_sec > 0.0:
+		mix_t = smoothstep(0.0, maple_mix_ramp_sec, _run_time - maple_unlock_sec)
+	var maple_chance: float = mix_t * clampf(maple_weight_max, 0.0, 1.0)
+	if randf() < maple_chance:
+		return MAPLE_SCENE
+	return ACORN_SCENE
+
+
 func _spawn_enemy() -> void:
-	if ENEMY_SCENES.is_empty() or not _camera:
+	if not _camera:
 		return
 
 	var vp_size   := get_viewport().get_visible_rect().size
@@ -146,6 +180,6 @@ func _spawn_enemy() -> void:
 		2: spawn_pos = Vector2(cam_center.x - half_w - margin, cam_center.y + randf_range(-half_h, half_h))
 		3: spawn_pos = Vector2(cam_center.x + half_w + margin, cam_center.y + randf_range(-half_h, half_h))
 
-	var enemy := ENEMY_SCENES[randi() % ENEMY_SCENES.size()].instantiate()
+	var enemy := _pick_enemy_scene().instantiate()
 	enemy.global_position = spawn_pos
 	add_child(enemy)
