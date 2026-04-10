@@ -48,7 +48,7 @@ const _ATTR_WHAT: Dictionary = {
 	"magnet":   "Gem attraction radius +20 px per level (base 90 px).",
 }
 
-const _BASE_SPEED    := 320.0
+const _BASE_SPEED    := 360.0
 const _BASE_INTERVAL := 0.8
 const _PLAYER_REF_SCALE := 14.0
 
