@@ -38,9 +38,11 @@ var _hud: CanvasLayer
 var _spawn_timer: float
 var _game_over: bool = false
 var _run_time: float = 0.0
+var _pause_menu_open: bool = false
 
 
 func _ready() -> void:
+	_register_pause_action()
 	_spawn_timer = _spawn_period_sec()
 	_spawn_map()
 	_spawn_player()
@@ -88,6 +90,7 @@ func _setup_hud() -> void:
 	_hud.set_script(hud_script)
 	_hud.name = "HUD"
 	add_child(_hud)
+	_hud.configure_pause_controls(Callable(self, "_toggle_pause"))
 
 	_player.stats_changed.connect(_hud.update_stats)
 	_player.player_died.connect(_on_player_died)
@@ -101,12 +104,30 @@ func _setup_hud() -> void:
 	)
 	_hud.update_weapons(_player.weapon_levels, _player.attr_levels)
 
+func _register_pause_action() -> void:
+	if InputMap.has_action("pause_game"):
+		return
+
+	InputMap.add_action("pause_game")
+	var ev := InputEventKey.new()
+	ev.keycode = KEY_ESCAPE
+	InputMap.action_add_event("pause_game", ev)
+
 
 # ---------------------------------------------------------------------------
 # Game loop
 # ---------------------------------------------------------------------------
 
+func _toggle_pause() -> void:
+	if _pause_menu_open:
+		_resume_game()
+	else:
+		_pause_game()
+
 func _on_player_died() -> void:
+	_pause_menu_open = false
+	if _hud:
+		_hud.hide_pause_menu()
 	_game_over = true
 	_hud.show_game_over()
 	get_tree().paused = true
@@ -114,9 +135,31 @@ func _on_player_died() -> void:
 func _on_level_up_available(options: Array) -> void:
 	_hud.show_level_up_choice(options, func(id: String): _player.apply_upgrade(id))
 
+func _pause_game() -> void:
+	if _pause_menu_open or _game_over:
+		return
+	_pause_menu_open = true
+	_hud.show_pause_menu(Callable(self, "_resume_game"), Callable(self, "_restart_run"))
+	get_tree().paused = true
+
+func _resume_game() -> void:
+	if not _pause_menu_open:
+		return
+	_pause_menu_open = false
+	if _hud:
+		_hud.hide_pause_menu()
+	get_tree().paused = false
+
+func _restart_run() -> void:
+	_pause_menu_open = false
+	if _hud:
+		_hud.hide_pause_menu()
+	get_tree().paused = false
+	get_tree().reload_current_scene()
+
 
 func _process(delta: float) -> void:
-	if _game_over:
+	if _game_over or get_tree().paused:
 		return
 	_run_time += delta
 	_update_camera_aim(delta)
