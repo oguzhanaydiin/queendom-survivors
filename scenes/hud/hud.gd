@@ -8,6 +8,9 @@ var _timer_label: Label
 var _go_overlay: Panel
 var _go_time_label: Label
 var _damage_flash: ColorRect
+var _pause_overlay: Control = null
+var _pause_continue_callback: Callable
+var _pause_restart_callback: Callable
 
 var _elapsed_time: float = 0.0
 var _game_over: bool = false
@@ -22,6 +25,7 @@ var _levelup_callback: Callable
 
 # Individual icon textures, keyed by weapon/attr id
 var _textures: Dictionary = {}
+var _pause_toggle_callback: Callable
 
 # ── Layout constants ───────────────────────────────────────────────────────────
 const BORDER     = 3
@@ -98,8 +102,24 @@ func _ready():
 	_build_game_over(root)
 	_build_crosshair()
 
-func _process(delta: float) -> void:
+func _input(event: InputEvent) -> void:
 	if _game_over:
+		return
+	if _levelup_overlay:
+		return
+	if not event.is_action_pressed("pause_game"):
+		return
+	if event is InputEventKey and event.is_echo():
+		return
+	if _pause_toggle_callback.is_valid():
+		_pause_toggle_callback.call()
+		get_viewport().set_input_as_handled()
+
+func configure_pause_controls(on_toggle: Callable) -> void:
+	_pause_toggle_callback = on_toggle
+
+func _process(delta: float) -> void:
+	if _game_over or get_tree().paused:
 		return
 	_elapsed_time += delta
 	if _timer_label:
@@ -318,6 +338,103 @@ func _build_game_over(root: Control) -> void:
 	btn.add_theme_stylebox_override("focus",   _pbox(Color(0.14, 0.06, 0.04), Color(0.70, 0.14, 0.10)))
 	btn.pressed.connect(_on_restart_pressed)
 	modal.add_child(btn)
+
+func show_pause_menu(on_continue: Callable, on_restart: Callable) -> void:
+	if _game_over or _levelup_overlay:
+		return
+
+	_pause_continue_callback = on_continue
+	_pause_restart_callback = on_restart
+
+	if _pause_overlay:
+		_pause_overlay.queue_free()
+
+	var root: Control = get_child(0)
+	_pause_overlay = Control.new()
+	_pause_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_pause_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	root.add_child(_pause_overlay)
+
+	var backdrop := ColorRect.new()
+	backdrop.set_anchors_preset(Control.PRESET_FULL_RECT)
+	backdrop.color = Color(0.0, 0.0, 0.0, 0.78)
+	backdrop.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_pause_overlay.add_child(backdrop)
+
+	var modal := Panel.new()
+	modal.anchor_left = 0.5
+	modal.anchor_right = 0.5
+	modal.anchor_top = 0.5
+	modal.anchor_bottom = 0.5
+	modal.offset_left = -210
+	modal.offset_right = 210
+	modal.offset_top = -150
+	modal.offset_bottom = 150
+	modal.add_theme_stylebox_override("panel", _pbox(Color(0.05, 0.04, 0.10), Color(0.45, 0.38, 0.86)))
+	_pause_overlay.add_child(modal)
+
+	var title := Label.new()
+	title.text = "PAUSED"
+	title.position = Vector2(0, 26)
+	title.size = Vector2(420, 52)
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 38)
+	title.add_theme_color_override("font_color", Color(0.94, 0.88, 1.00))
+	title.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 1.0))
+	title.add_theme_constant_override("outline_size", 3)
+	title.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	modal.add_child(title)
+
+	var hint := Label.new()
+	hint.text = "ESC  TO CONTINUE"
+	hint.position = Vector2(0, 80)
+	hint.size = Vector2(420, 22)
+	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	hint.add_theme_font_size_override("font_size", 13)
+	hint.add_theme_color_override("font_color", Color(0.72, 0.80, 1.00))
+	hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	modal.add_child(hint)
+
+	var continue_btn := Button.new()
+	continue_btn.text = "CONTINUE"
+	continue_btn.position = Vector2(125, 132)
+	continue_btn.size = Vector2(170, 46)
+	continue_btn.add_theme_font_size_override("font_size", 16)
+	continue_btn.add_theme_color_override("font_color", Color(0.92, 0.98, 1.00))
+	continue_btn.add_theme_color_override("font_hover_color", Color(1.0, 1.0, 1.0))
+	continue_btn.add_theme_color_override("font_pressed_color", Color(0.86, 0.94, 1.0))
+	continue_btn.add_theme_stylebox_override("normal", _pbox(Color(0.06, 0.10, 0.18), Color(0.12, 0.56, 0.92)))
+	continue_btn.add_theme_stylebox_override("hover", _pbox(Color(0.08, 0.18, 0.30), Color(0.26, 0.76, 1.00)))
+	continue_btn.add_theme_stylebox_override("pressed", _pbox(Color(0.06, 0.24, 0.40), Color(0.26, 0.76, 1.00)))
+	continue_btn.add_theme_stylebox_override("focus", _pbox(Color(0.06, 0.10, 0.18), Color(0.12, 0.56, 0.92)))
+	continue_btn.pressed.connect(_on_pause_continue_pressed)
+	modal.add_child(continue_btn)
+
+	var restart_btn := Button.new()
+	restart_btn.text = "RESTART"
+	restart_btn.position = Vector2(125, 190)
+	restart_btn.size = Vector2(170, 46)
+	restart_btn.add_theme_font_size_override("font_size", 16)
+	restart_btn.add_theme_color_override("font_color", Color(1.0, 0.96, 0.84))
+	restart_btn.add_theme_color_override("font_hover_color", Color(1.0, 1.0, 1.0))
+	restart_btn.add_theme_color_override("font_pressed_color", Color(1.0, 0.90, 0.72))
+	restart_btn.add_theme_stylebox_override("normal", _pbox(Color(0.16, 0.06, 0.04), Color(0.72, 0.18, 0.12)))
+	restart_btn.add_theme_stylebox_override("hover", _pbox(Color(0.30, 0.08, 0.05), Color(0.96, 0.28, 0.16)))
+	restart_btn.add_theme_stylebox_override("pressed", _pbox(Color(0.46, 0.08, 0.05), Color(0.96, 0.28, 0.16)))
+	restart_btn.add_theme_stylebox_override("focus", _pbox(Color(0.16, 0.06, 0.04), Color(0.72, 0.18, 0.12)))
+	restart_btn.pressed.connect(_on_pause_restart_pressed)
+	modal.add_child(restart_btn)
+
+	continue_btn.grab_focus()
+
+func hide_pause_menu() -> void:
+	if not _pause_overlay:
+		return
+	_pause_overlay.queue_free()
+	_pause_overlay = null
+
+func is_levelup_open() -> bool:
+	return _levelup_overlay != null
 
 # ── Weapon grid (2 rows × 6 cols) ─────────────────────────────────────────────
 func _build_weapon_grid(root: Control) -> void:
@@ -612,6 +729,14 @@ func _on_upgrade_chosen(upgrade_id: String) -> void:
 	get_tree().paused = false
 	if _levelup_callback.is_valid():
 		_levelup_callback.call(upgrade_id)
+
+func _on_pause_continue_pressed() -> void:
+	if _pause_continue_callback.is_valid():
+		_pause_continue_callback.call()
+
+func _on_pause_restart_pressed() -> void:
+	if _pause_restart_callback.is_valid():
+		_pause_restart_callback.call()
 
 # ── Stat updaters ──────────────────────────────────────────────────────────────
 func update_stats(p_hp: int, p_max_hp: int, p_xp: int, p_xp_next: int, p_level: int) -> void:
