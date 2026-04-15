@@ -41,7 +41,7 @@ const _WEAPON_WHAT: Dictionary = {
 }
 const _ATTR_WHAT: Dictionary = {
 	"speed":    "Move speed +16 (base 320 → 336 px/s; stacks +16 per level).",
-	"damage":   "Damage multiplier +10% per level (×1.1, ×1.2…). Enemies still die in one hit for now — ready for tougher foes.",
+	"damage":   "Damage multiplier +10% per level (×1.1, ×1.2…). Helps weapons chew through tougher enemies faster.",
 	"atk_spd":  "All weapon cooldowns ×0.95 per level (stacks multiplicatively).",
 	"area":     "Explosion, sweep & cotton aura radius +15% per level (multiplicative).",
 	"duration": "Projectile lifetime & bomb fuse +20% per level (multiplicative).",
@@ -51,6 +51,12 @@ const _ATTR_WHAT: Dictionary = {
 const _BASE_SPEED    := 360.0
 const _BASE_INTERVAL := 0.8
 const _PLAYER_REF_SCALE := 14.0
+const _ICE_CREAM_DAMAGE := 12.0
+const _ROCK_CANDY_DAMAGE := 8.0
+const _TOFFEE_BOMB_DAMAGE := 24.0
+const _LOLLIPOP_DAMAGE := 10.0
+const _COTTON_CANDY_DAMAGE := 8.0
+const _CANDY_CANE_DAMAGE := 18.0
 
 var weapon_levels: Dictionary = {
 	"ice_cream": 1, "toffee_bomb": 0, "rock_candy": 0,
@@ -174,12 +180,14 @@ func shoot():
 		offsets = [-spread, 0.0, spread]
 
 	var life: float = 3.0 * _stat_dur_mult()
+	var damage: float = _weapon_damage(_ICE_CREAM_DAMAGE + float(sb_lv - 1) * 2.0)
 	for angle_offset in offsets:
 		var shot = _ICE_CREAM_SCENE.instantiate()
 		shot.global_position = global_position
 		shot.direction        = aim.rotated(angle_offset)
 		shot.speed            = ball_speed
 		shot.lifetime         = life
+		shot.damage           = damage
 		get_tree().current_scene.add_child(shot)
 
 func take_damage(amount: int):
@@ -269,6 +277,12 @@ func _stat_dur_mult() -> float:
 func _stat_area_mult() -> float:
 	return 1.0 + 0.15 * float(attr_levels.get("area", 0))
 
+func _stat_damage_mult() -> float:
+	return 1.0 + 0.1 * float(attr_levels.get("damage", 0))
+
+func _weapon_damage(base_damage: float) -> float:
+	return base_damage * _stat_damage_mult()
+
 func _upgrade_choice_desc(key: String, cur_lv: int) -> String:
 	var asp: float = _stat_asp_mult()
 	var dur: float = _stat_dur_mult()
@@ -349,7 +363,7 @@ func _upgrade_choice_desc(key: String, cur_lv: int) -> String:
 		"damage":
 			var bm: float = 1.0 + fr * 0.1
 			var am: float = 1.0 + (fr + 1.0) * 0.1
-			return "Damage mult ×" + _fmt_f(bm, 1) + " → ×" + _fmt_f(am, 1) + "\n(Still one-hit kills for now.)"
+			return "Damage mult ×" + _fmt_f(bm, 1) + " → ×" + _fmt_f(am, 1) + "\n(All weapon hits scale with this.)"
 		"atk_spd":
 			var basp: float = pow(0.95, fr)
 			var aasp: float = pow(0.95, fr + 1.0)
@@ -457,6 +471,7 @@ func _shoot_rock_candy() -> void:
 	var rc_lv: int   = weapon_levels.get("rock_candy", 1)
 	var count: int   = 6 + (rc_lv - 1) * 2
 	var spd:   float = 260.0 + (rc_lv - 1) * 20.0
+	var damage: float = _weapon_damage(_ROCK_CANDY_DAMAGE + float(rc_lv - 1) * 1.5)
 	for i in range(count):
 		var angle: float = TAU * i / count
 		var shard        = _ROCK_CANDY_SCENE.instantiate()
@@ -464,12 +479,14 @@ func _shoot_rock_candy() -> void:
 		shard.direction       = Vector2(cos(angle), sin(angle))
 		shard.speed           = spd
 		shard.lifetime        = 3.0 * _stat_dur_mult()
+		shard.damage          = damage
 		get_tree().current_scene.add_child(shard)
 
 # ── Toffee Bomb ───────────────────────────────────────────────────────────────
 func _drop_toffee_bomb() -> void:
 	var tb_lv: int    = weapon_levels.get("toffee_bomb", 1)
 	var radius: float = 80.0 + (tb_lv - 1) * 18.0
+	var damage: float = _weapon_damage(_TOFFEE_BOMB_DAMAGE + float(tb_lv - 1) * 4.0)
 	var target: Vector2 = global_position + Vector2(randf_range(-180, 180), randf_range(-180, 180))
 	var nearest = _find_nearest_enemy(380.0)
 	if nearest:
@@ -477,6 +494,7 @@ func _drop_toffee_bomb() -> void:
 	var bomb = _TOFFEE_BOMB_SCENE.instantiate()
 	bomb.explosion_radius = radius * _stat_area_mult()
 	bomb.fuse_time = max(0.15, (1.2 - (tb_lv - 1) * 0.05) * _stat_dur_mult())
+	bomb.damage = damage
 	bomb.global_position = target
 	get_tree().current_scene.add_child(bomb)
 
@@ -484,8 +502,10 @@ func _drop_toffee_bomb() -> void:
 func _sweep_candy_cane() -> void:
 	var cca_lv: int   = weapon_levels.get("candy_cane", 1)
 	var radius: float = 90.0 + (cca_lv - 1) * 18.0
+	var damage: float = _weapon_damage(_CANDY_CANE_DAMAGE + float(cca_lv - 1) * 3.0)
 	var sweep = _CANDY_CANE_SCENE.instantiate()
 	sweep.sweep_radius    = radius * _stat_area_mult()
+	sweep.damage          = damage
 	sweep.global_position = global_position
 	get_tree().current_scene.add_child(sweep)
 
@@ -498,10 +518,12 @@ func _update_lollipop(new_lv: int) -> void:
 		return
 	var orb_count: int  = 1 + (new_lv - 1) / 2
 	var orbit_r:   float = (6.0 + (new_lv - 1) * 0.5) * _stat_area_mult()
+	var damage: float = _weapon_damage(_LOLLIPOP_DAMAGE + float(new_lv - 1) * 2.0)
 	for i in range(orb_count):
 		var orb = _LOLLIPOP_SCENE.instantiate()
 		orb.set_meta("radius", orbit_r)
 		orb.set_meta("offset", TAU * i / orb_count)
+		orb.damage = damage
 		add_child(orb)
 		_lollipop_orbs.append(orb)
 
@@ -514,9 +536,11 @@ func _update_cotton_candy(new_lv: int) -> void:
 	var sm: float      = scale.x / _PLAYER_REF_SCALE
 	var aura_r: float  = (2.2 + (new_lv - 1) * 0.35) * sm * _stat_area_mult()
 	var interval: float = max(0.4, 1.5 - (new_lv - 1) * 0.2) * _stat_asp_mult()
+	var damage: float = _weapon_damage(_COTTON_CANDY_DAMAGE + float(new_lv - 1) * 2.0)
 	var aura = _COTTON_CANDY_SCENE.instantiate()
 	aura.aura_radius   = aura_r
 	aura.tick_interval = interval
+	aura.damage        = damage
 	add_child(aura)
 	_cotton_candy_aura = aura
 

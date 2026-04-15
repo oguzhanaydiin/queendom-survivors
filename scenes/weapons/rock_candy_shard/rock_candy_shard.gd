@@ -3,6 +3,7 @@ extends Area2D
 var speed: float      = 260.0
 var direction: Vector2 = Vector2.RIGHT
 var lifetime: float   = 3.0
+var damage: float     = 8.0
 
 func _ready() -> void:
 	rotation = direction.angle()
@@ -12,6 +13,6 @@ func _physics_process(delta: float) -> void:
 	position += direction * speed * delta
 
 func _on_body_entered(body: Node2D) -> void:
-	if body.is_in_group("enemies"):
-		body.die()
+	if body.is_in_group("enemies") and body.has_method("take_damage"):
+		body.take_damage(damage)
 		queue_free()

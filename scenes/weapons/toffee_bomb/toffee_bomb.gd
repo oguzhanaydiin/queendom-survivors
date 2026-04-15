@@ -2,6 +2,7 @@ extends Node2D
 
 @export var explosion_radius: float = 80.0
 @export var fuse_time: float = 1.2
+@export var damage: float = 24.0
 
 var _shadow: Polygon2D
 
@@ -58,7 +59,7 @@ func _explode() -> void:
 	var boom_pos := global_position
 	for enemy in get_tree().get_nodes_in_group("enemies"):
 		if is_instance_valid(enemy) and boom_pos.distance_to(enemy.global_position) <= explosion_radius:
-			enemy.die()
+			enemy.take_damage(damage)
 
 	# Expanding explosion ring
 	var ring := Node2D.new()
