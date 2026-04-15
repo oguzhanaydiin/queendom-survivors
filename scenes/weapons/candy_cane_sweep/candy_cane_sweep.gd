@@ -1,6 +1,7 @@
 extends Area2D
 
 @export var sweep_radius: float = 90.0
+@export var damage: float = 18.0
 
 func _ready() -> void:
 	var cs := $CollisionShape2D as CollisionShape2D
@@ -33,5 +34,5 @@ func _ready() -> void:
 	fade.tween_callback(queue_free)
 
 func _on_body_entered(body: Node2D) -> void:
-	if body.is_in_group("enemies"):
-		body.die()
+	if body.is_in_group("enemies") and body.has_method("take_damage"):
+		body.take_damage(damage)

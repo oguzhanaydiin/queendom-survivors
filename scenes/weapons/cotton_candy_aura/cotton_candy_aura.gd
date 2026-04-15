@@ -2,6 +2,7 @@ extends Area2D
 
 @export var tick_interval: float = 1.5
 @export var aura_radius: float = 2.2
+@export var damage: float = 8.0
 
 ## Opaque art bounds inside cotton_candy.png (1376×768); rest is empty transparency.
 const _ART_REGION := Rect2(458, 88, 460, 598)
@@ -58,9 +59,9 @@ func _physics_process(delta: float) -> void:
 func _run_tick() -> void:
 	var hit_any := false
 	for body in get_overlapping_bodies():
-		if body.is_in_group("enemies"):
+		if body.is_in_group("enemies") and body.has_method("take_damage"):
 			hit_any = true
-			body.die()
+			body.take_damage(damage)
 	_play_pulse(hit_any)
 
 

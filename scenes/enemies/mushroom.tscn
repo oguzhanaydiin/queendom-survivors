@@ -26,6 +26,7 @@ scale = Vector2(2, 2)
 collision_layer = 2
 collision_mask = 0
 script = ExtResource("1")
+max_hp = 48.0
 speed = 82.0
 xp_value = 22
 damage_amount = 16

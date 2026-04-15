@@ -5,9 +5,11 @@ extends CharacterBody2D
 @export var damage_amount: int = 10
 @export var damage_interval: float = 1.0
 @export var melee_range: float = 120.0
+@export var max_hp: float = 12.0
 
 var is_dying = false
 var dmg_timer: float = 0.0
+var current_hp: float = 0.0
 
 @onready var animated_sprite = $AnimatedSprite2D
 
@@ -15,6 +17,14 @@ func _ready():
 	add_to_group("enemies")
 	# Collide with player (layer 1) only — enemies ignore each other
 	collision_mask = 1
+	current_hp = max_hp
+
+func take_damage(amount: float) -> void:
+	if is_dying or amount <= 0.0:
+		return
+	current_hp -= amount
+	if current_hp <= 0.0:
+		die()
 
 func _physics_process(delta):
 	if is_dying:
