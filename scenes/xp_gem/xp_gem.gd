@@ -21,7 +21,11 @@ func _process(delta: float) -> void:
 		queue_free()
 		return
 
-	if not _attracted and dist <= player.gem_attract_radius:
+	var attract_r: float = player.gem_attract_radius
+	if player.has_method("get_effective_gem_attract_radius"):
+		attract_r = player.get_effective_gem_attract_radius()
+
+	if not _attracted and dist <= attract_r:
 		_attracted = true
 
 	if _attracted:

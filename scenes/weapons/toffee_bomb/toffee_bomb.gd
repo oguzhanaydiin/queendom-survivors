@@ -60,6 +60,9 @@ func _explode() -> void:
 	for enemy in get_tree().get_nodes_in_group("enemies"):
 		if is_instance_valid(enemy) and boom_pos.distance_to(enemy.global_position) <= explosion_radius:
 			enemy.take_damage(damage)
+	for chest in get_tree().get_nodes_in_group("chests"):
+		if is_instance_valid(chest) and boom_pos.distance_to(chest.global_position) <= explosion_radius:
+			WeaponHitHelper.deal_weapon_damage(chest, damage)
 
 	# Expanding explosion ring
 	var ring := Node2D.new()
