@@ -2,7 +2,7 @@ extends Node2D
 
 const _TEX := preload("res://assets/sprites/heal.png")
 
-@export var heal_amount: int = 28
+@export var heal_amount: int = 25
 @export var move_speed: float = 220.0
 
 var collect_radius: float = 40.0

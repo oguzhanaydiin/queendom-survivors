@@ -3,7 +3,7 @@ extends Node2D
 var xp_amount: int = 10
 var collect_radius: float = 24.0
 var move_speed: float = 230.0
-const _VACUUM_PULL_SPEED := 2600.0
+const _VACUUM_PULL_SPEED := 1450.0
 
 var _attracted: bool = false
 

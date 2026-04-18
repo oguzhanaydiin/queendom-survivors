@@ -28,7 +28,7 @@ func _process(delta: float) -> void:
 
 	if dist <= collect_radius:
 		if player.has_method("apply_xp_magnet_vacuum"):
-			player.apply_xp_magnet_vacuum(3.0)
+			player.apply_xp_magnet_vacuum(2.5)
 		queue_free()
 		return
 

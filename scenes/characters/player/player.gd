@@ -203,7 +203,7 @@ func is_xp_vacuum_active() -> bool:
 	return _xp_vacuum_time > 0.0
 
 
-func apply_xp_magnet_vacuum(duration_sec: float = 3.0) -> void:
+func apply_xp_magnet_vacuum(duration_sec: float = 2.5) -> void:
 	if _dead or duration_sec <= 0.0:
 		return
 	_xp_vacuum_time = duration_sec
