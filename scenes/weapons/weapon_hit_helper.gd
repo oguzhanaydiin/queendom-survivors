@@ -1,6 +1,6 @@
 class_name WeaponHitHelper
 extends RefCounted
-## Shared hit rules for projectiles / melee so chests and enemies stay in sync.
+## Shared hit rules for projectiles / melee (enemies + chests on "collectibles" physics layer).
 
 static func deal_weapon_damage(body: Node2D, damage: float) -> bool:
 	if not body.has_method("take_damage"):

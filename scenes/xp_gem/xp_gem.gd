@@ -3,6 +3,7 @@ extends Node2D
 var xp_amount: int = 10
 var collect_radius: float = 24.0
 var move_speed: float = 230.0
+const _VACUUM_PULL_SPEED := 2600.0
 
 var _attracted: bool = false
 
@@ -21,16 +22,23 @@ func _process(delta: float) -> void:
 		queue_free()
 		return
 
+	var vacuum := false
+	if player.has_method("is_xp_vacuum_active"):
+		vacuum = player.is_xp_vacuum_active()
+
 	var attract_r: float = player.gem_attract_radius
 	if player.has_method("get_effective_gem_attract_radius"):
 		attract_r = player.get_effective_gem_attract_radius()
 
-	if not _attracted and dist <= attract_r:
+	if vacuum:
+		_attracted = true
+	elif not _attracted and dist <= attract_r:
 		_attracted = true
 
 	if _attracted:
 		var dir: Vector2 = (player.global_position - global_position).normalized()
-		global_position += dir * move_speed * delta
+		var spd: float = _VACUUM_PULL_SPEED if vacuum else move_speed
+		global_position += dir * spd * delta
 
 func _draw() -> void:
 	# Main hexagonal gem body

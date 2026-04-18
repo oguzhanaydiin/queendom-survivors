@@ -3,17 +3,20 @@ extends Node2D
 const _TEX := preload("res://assets/sprites/heal.png")
 
 @export var heal_amount: int = 28
-@export var collect_radius: float = 22.0
 @export var move_speed: float = 220.0
 
+var collect_radius: float = 40.0
 var _attracted: bool = false
 
 
 func _ready() -> void:
 	z_index = 1
+	var sz: Vector2 = _TEX.get_size()
+	var u: float = PickupVisualScale.uniform_icon_scale(_TEX)
+	collect_radius = PickupVisualScale.collect_radius_for_scale(sz, u)
 	var s := Sprite2D.new()
 	s.texture = _TEX
-	s.scale = Vector2(0.07, 0.07)
+	s.scale = Vector2(u, u)
 	add_child(s)
 
 

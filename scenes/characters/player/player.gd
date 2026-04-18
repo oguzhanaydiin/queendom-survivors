@@ -76,7 +76,8 @@ var xp_to_next_level: int = 100
 var level: int = 1
 var damage_timer: float = 0.0
 var _dead: bool = false
-var _magnet_pulse_time: float = 0.0
+## Magnet pickup: pull all on-screen XP gems fast; counts down in _physics_process.
+var _xp_vacuum_time: float = 0.0
 
 # Level-up queue so multiple XP events don't stack broken UI
 var _levelup_queue: int = 0
@@ -135,8 +136,8 @@ func _physics_process(delta):
 		move_and_slide()
 		return
 
-	if _magnet_pulse_time > 0.0:
-		_magnet_pulse_time = maxf(0.0, _magnet_pulse_time - delta)
+	if _xp_vacuum_time > 0.0:
+		_xp_vacuum_time = maxf(0.0, _xp_vacuum_time - delta)
 
 	if damage_timer > 0:
 		damage_timer -= delta
@@ -195,13 +196,17 @@ func shoot():
 		get_tree().current_scene.add_child(shot)
 
 func get_effective_gem_attract_radius() -> float:
-	return gem_attract_radius + (720.0 if _magnet_pulse_time > 0.0 else 0.0)
+	return gem_attract_radius
 
 
-func apply_magnet_pulse(duration_sec: float) -> void:
+func is_xp_vacuum_active() -> bool:
+	return _xp_vacuum_time > 0.0
+
+
+func apply_xp_magnet_vacuum(duration_sec: float = 3.0) -> void:
 	if _dead or duration_sec <= 0.0:
 		return
-	_magnet_pulse_time = maxf(_magnet_pulse_time, duration_sec)
+	_xp_vacuum_time = duration_sec
 
 
 func heal(amount: int) -> void:

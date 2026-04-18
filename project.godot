@@ -25,7 +25,7 @@ window/size/viewport_height=1080
 2d_physics/layer_1="player"
 2d_physics/layer_2="enemies"
 2d_physics/layer_3="weapons"
-2d_physics/layer_4="chests"
+2d_physics/layer_4="collectibles"
 
 [physics]
 

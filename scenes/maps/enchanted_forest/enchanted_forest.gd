@@ -85,10 +85,8 @@ func _spawn_chests_for_chunk(chunk_coord: Vector2i, origin: Vector2i) -> void:
 		return
 	var rng := RandomNumberGenerator.new()
 	rng.seed = int(hash(chunk_coord)) & 0x7FFFFFFF
-	# Many chunks load at once — keep density closer to Vampire Survivors pickups.
-	if rng.randf() > 0.14:
-		return
-	if rng.randf() > 0.34:
+	# ~26% of new chunks: was two low gates (~5%) so chests were too rare while exploring.
+	if rng.randf() > 0.74:
 		return
 	var wx := origin.x + rng.randi_range(2, CHUNK_SIZE - 3)
 	var wy := origin.y + rng.randi_range(2, CHUNK_SIZE - 3)
