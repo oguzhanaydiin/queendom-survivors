@@ -10,6 +10,8 @@ const TILE_SIZE   = 64  # px
 const CHUNK_SIZE  = 16  # tiles per chunk
 const RENDER_DIST = 3   # chunks around player
 
+const _CHEST_SCENE: PackedScene = preload("res://scenes/chest/chest.tscn")
+
 @onready var _tile_map: TileMapLayer = $TileMapLayer
 
 var _noise: FastNoiseLite
@@ -73,6 +75,27 @@ func _generate_chunk(chunk_coord: Vector2i) -> void:
 			var wty := origin.y + ty
 			var tile_id := _tile_for_noise(_noise.get_noise_2d(wtx, wty))
 			_tile_map.set_cell(Vector2i(wtx, wty), tile_id, Vector2i(0, 0))
+
+	_spawn_chests_for_chunk(chunk_coord, origin)
+
+
+func _spawn_chests_for_chunk(chunk_coord: Vector2i, origin: Vector2i) -> void:
+	var scene := get_tree().current_scene
+	if not scene:
+		return
+	var rng := RandomNumberGenerator.new()
+	rng.seed = int(hash(chunk_coord)) & 0x7FFFFFFF
+	# ~26% of new chunks: was two low gates (~5%) so chests were too rare while exploring.
+	if rng.randf() > 0.74:
+		return
+	var wx := origin.x + rng.randi_range(2, CHUNK_SIZE - 3)
+	var wy := origin.y + rng.randi_range(2, CHUNK_SIZE - 3)
+	var chest := _CHEST_SCENE.instantiate()
+	chest.global_position = Vector2(
+		float(wx) * TILE_SIZE + TILE_SIZE * 0.5,
+		float(wy) * TILE_SIZE + TILE_SIZE * 0.5
+	)
+	scene.add_child(chest)
 
 
 func _player_chunk() -> Vector2i:

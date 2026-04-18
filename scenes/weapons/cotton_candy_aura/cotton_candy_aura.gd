@@ -59,9 +59,8 @@ func _physics_process(delta: float) -> void:
 func _run_tick() -> void:
 	var hit_any := false
 	for body in get_overlapping_bodies():
-		if body.is_in_group("enemies") and body.has_method("take_damage"):
+		if WeaponHitHelper.deal_weapon_damage(body, damage):
 			hit_any = true
-			body.take_damage(damage)
 	_play_pulse(hit_any)
 
 

@@ -20,6 +20,13 @@ config/icon="res://icon.svg"
 window/size/viewport_width=1920
 window/size/viewport_height=1080
 
+[layer_names]
+
+2d_physics/layer_1="player"
+2d_physics/layer_2="enemies"
+2d_physics/layer_3="weapons"
+2d_physics/layer_4="collectibles"
+
 [physics]
 
 3d/physics_engine="Jolt Physics"
