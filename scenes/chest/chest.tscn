@@ -10,6 +10,14 @@ size = Vector2(35, 29)
 atlas = ExtResource("2")
 region = Rect2(0, 0, 40, 32)
 
+[sub_resource type="AtlasTexture" id="AtlasTexture_m5ma0"]
+atlas = ExtResource("2")
+region = Rect2(0, 0, 40, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_vdnua"]
+atlas = ExtResource("2")
+region = Rect2(40, 0, 40, 32)
+
 [sub_resource type="SpriteFrames" id="SpriteFrames_m5ma0"]
 animations = [{
 "frames": [{
@@ -18,6 +26,17 @@ animations = [{
 }],
 "loop": true,
 "name": &"default",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_m5ma0")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_vdnua")
+}],
+"loop": true,
+"name": &"open",
 "speed": 5.0
 }]
 
@@ -34,3 +53,4 @@ shape = SubResource("RectangleShape2D_chest")
 position = Vector2(1.0000004, -4)
 scale = Vector2(1.4, 1.4)
 sprite_frames = SubResource("SpriteFrames_m5ma0")
+animation = &"default"
